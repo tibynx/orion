@@ -14,21 +14,16 @@ class Webhook(commands.Cog):
 
 
     # Group for webhook management
-    webhook_manage_group = app_commands.Group(
-        name="webhook-manage",
-        description="Webhook management",
+    webhook_edit_group = app_commands.Group(
+        name="webhookedit",
+        description="Edit webhook details",
         default_permissions=discord.Permissions(manage_webhooks=True),
         guild_only=True
-    )
-    webhook_edit_group = app_commands.Group(
-        name="edit",
-        description="Edit webhook details",
-        parent=webhook_manage_group
     )
 
     # Group for sending messages
     webhook_send_group = app_commands.Group(
-        name="webhook-send",
+        name="webhookmsg",
         description="Send messages through webhooks",
         default_permissions=discord.Permissions(manage_webhooks=True),
         guild_only=True
@@ -45,11 +40,12 @@ class Webhook(commands.Cog):
     )
 
     # Get details about a webhook
-    @webhook_manage_group.command(
-        name="get",
+    @app_commands.command(
+        name="webhookget",
         description="Get details about a webhook"
     )
-    #@app_commands.guild_only()
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
     @app_commands.describe(
         webhook_id="The ID of the webhook to fetch"
     )
@@ -75,10 +71,12 @@ class Webhook(commands.Cog):
 
 
     # List all webhooks
-    @webhook_manage_group.command(
-        name="list",
+    @app_commands.command(
+        name="webhooklist",
         description="List all webhooks in the current server"
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
     async def list_webhook(self, interaction: discord.Interaction) -> None:
         """List all webhooks in the current server"""
         webhooks = await interaction.guild.webhooks()
@@ -98,10 +96,12 @@ class Webhook(commands.Cog):
         return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # Create a webhook
-    @webhook_manage_group.command(
-        name="create",
+    @app_commands.command(
+        name="webhookcreate",
         description="Create a webhook. The webhook will be associated with this bot!"
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
     @app_commands.describe(
         channel="The channel to create the webhook in",
         name="The name of the webhook"
@@ -121,10 +121,12 @@ class Webhook(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # Delete a webhook
-    @webhook_manage_group.command(
-        name="delete",
+    @app_commands.command(
+        name="webhookdelete",
         description="Delete a webhook by its ID"
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
     @app_commands.describe(
         webhook_id="The ID of the webhook to delete"
     )
