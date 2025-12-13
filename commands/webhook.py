@@ -7,6 +7,51 @@ import aiohttp
 
 from config import EMBED_COLOR, INFO_EMOJI, SUCCESS_EMOJI, ERROR_EMOJI
 
+# Modal for sending messages via webhook ID
+class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
+    def __init__(self, bot):
+        super().__init__()
+        self.bot = bot
+
+    webhook_id = discord.ui.TextInput(
+        label="Webhook ID",
+        placeholder="Enter the webhook ID",
+        required=True,
+        max_length=20,
+    )
+    message = discord.ui.TextInput(
+        label="Message",
+        style=discord.TextStyle.long,
+        placeholder="Enter the message to send",
+        required=True,
+        max_length=2000,
+    )
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        try:
+            webhook = await self.bot.fetch_webhook(self.webhook_id.value)
+            await webhook.send(content=self.message.value)
+            await interaction.response.send_message(
+                f"{SUCCESS_EMOJI} Message sent successfully!",
+                ephemeral=True
+            )
+        except discord.NotFound:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} Failed to send message: `{str(e).capitalize()}`",
+                ephemeral=True
+            )
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        await interaction.response.send_message(
+            f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
+            ephemeral=True
+        )
+
 
 class Webhook(commands.Cog):
     def __init__(self, bot):
@@ -19,24 +64,6 @@ class Webhook(commands.Cog):
         description="Edit webhook details",
         default_permissions=discord.Permissions(manage_webhooks=True),
         guild_only=True
-    )
-
-    # Group for sending messages
-    webhook_send_group = app_commands.Group(
-        name="webhookmsg",
-        description="Send messages through webhooks",
-        default_permissions=discord.Permissions(manage_webhooks=True),
-        guild_only=True
-    )
-    webhook_send_url_group = app_commands.Group(
-        name="url",
-        description="Use webhook URL to send messages",
-        parent=webhook_send_group
-    )
-    webhook_send_id_group = app_commands.Group(
-        name="id",
-        description="Use webhook ID to send messages",
-        parent=webhook_send_group
     )
 
     # Get details about a webhook
@@ -123,7 +150,7 @@ class Webhook(commands.Cog):
     # Delete a webhook
     @app_commands.command(
         name="webhookdelete",
-        description="Delete a webhook by its ID"
+        description="Delete a webhook"
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True)
@@ -150,161 +177,17 @@ class Webhook(commands.Cog):
                 ephemeral=True
             )
 
-    # Send a message through a webhook using its URL
-    @webhook_send_url_group.command(
-        name="text",
-        description="Send a text message through a webhook URL"
+
+    # Send a message through a webhook using its ID (opens modal)
+    @app_commands.command(
+        name="webhookmsg",
+        description="Send a message through a webhook"
     )
-    @app_commands.describe(
-        webhook_url="The URL of the webhook",
-        message="The message to send"
-    )
-    async def webhook_send_url_text(self, interaction: discord.Interaction, webhook_url: str, message: str) -> None:
-        """Send a text message through a webhook URL"""
-        try:
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(webhook_url, session=session)
-                await webhook.send(content=message)
-
-            await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Message sent successfully!",
-                ephemeral=True
-            )
-        except ValueError:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Invalid webhook URL!",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to send message: `{str(e).capitalize()}`",
-                ephemeral=True
-            )
-
-    # Send a message through a webhook using its ID
-    @webhook_send_id_group.command(
-        name="text",
-        description="Send a text message through a webhook using its ID"
-    )
-    @app_commands.describe(
-        webhook_id="The ID of the webhook",
-        message="The message to send"
-    )
-    async def webhook_send_text_id(self, interaction: discord.Interaction, webhook_id: str, message: str) -> None:
-        """Send a text message through a webhook using its ID"""
-        try:
-            webhook = await self.bot.fetch_webhook(webhook_id)
-            await webhook.send(content=message)
-            await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Message sent successfully!",
-                ephemeral=True
-            )
-        except discord.NotFound:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
-                ephemeral=True
-            )
-
-    # Send a message through a webhook from a file using webhook ID
-    @webhook_send_id_group.command(
-        name="file",
-        description="Send contents of a text file through a webhook using its ID"
-    )
-    @app_commands.describe(
-        webhook_id="The ID of the webhook",
-        file="The text file containing the message to send"
-    )
-    async def webhook_send_file(self, interaction: discord.Interaction, webhook_id: str, file: discord.Attachment) -> None:
-        """Send the contents of a text file through the specified webhook"""
-        if not file.filename.endswith('.txt'):
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Only .txt files are supported!",
-                ephemeral=True
-            )
-            return
-
-        try:
-            # Download and read the file content
-            file_content = await file.read()
-            message_content = file_content.decode('utf-8')
-
-            # Check if content exceeds Discord's character limit
-            if len(message_content) > 2000:
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} File content exceeds Discord's 2000 character limit! ({len(message_content)} characters)",
-                    ephemeral=True
-                )
-                return
-
-            # Send the message
-            webhook = await self.bot.fetch_webhook(webhook_id)
-            await webhook.send(content=message_content)
-            await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} File contents sent successfully!",
-                ephemeral=True
-            )
-        except discord.NotFound:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
-                ephemeral=True
-            )
-
-
-    # Send a message through a webhook from a file using webhook URL
-    @webhook_send_url_group.command(
-        name="file",
-        description="Send contents of a text file through a webhook URL"
-    )
-    @app_commands.describe(
-        webhook_url="The URL of the webhook",
-        file="The text file containing the message to send"
-    )
-    async def webhook_send_file(self, interaction: discord.Interaction, webhook_url: str, file: discord.Attachment) -> None:
-        """Send the contents of a text file through the specified webhook"""
-        if not file.filename.endswith('.txt'):
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Only .txt files are supported!",
-                ephemeral=True
-            )
-            return
-
-        try:
-            # Download and read the file content
-            file_content = await file.read()
-            message_content = file_content.decode('utf-8')
-
-            # Check if content exceeds Discord's character limit
-            if len(message_content) > 2000:
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} File content exceeds Discord's 2000 character limit! ({len(message_content)} characters)",
-                    ephemeral=True
-                )
-                return
-
-            # Send the message
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(webhook_url, session=session)
-                await webhook.send(content=message_content)
-
-            await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} File contents sent successfully!",
-                ephemeral=True
-            )
-        except ValueError:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Invalid webhook URL!",
-                ephemeral=True
-            )
-        except UnicodeDecodeError:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} The file must contain valid text content!",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to send message: `{str(e).capitalize()}`",
-                ephemeral=True
-            )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
+    async def webhook_send_id(self, interaction: discord.Interaction) -> None:
+        """Open a modal to send a message through a webhook ID"""
+        await interaction.response.send_modal(WebhookSendModal(self.bot))
 
     # Change the name of a webhook
     @webhook_edit_group.command(
