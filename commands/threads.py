@@ -6,7 +6,7 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Create a modal for creating a new thread
-class ThreadModal(discord.ui.Modal, title="Create new thread"):
+class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
     def __init__(self, message: discord.Message):
         super().__init__()
         self.message = message
@@ -88,7 +88,7 @@ class Threads(commands.Cog):
             )
             return
 
-        await interaction.response.send_modal(ThreadModal(message))
+        await interaction.response.send_modal(CreateThreadModal(message))
 
 
     # Create command group for thread management
