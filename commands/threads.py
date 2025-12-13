@@ -91,19 +91,13 @@ class Threads(commands.Cog):
         await interaction.response.send_modal(CreateThreadModal(message))
 
 
-    # Create command group for thread management
-    thread_group = app_commands.Group(
-        name="thread",
-        description="Thread management",
-        default_permissions=discord.Permissions(manage_threads=True),
-        guild_only=True
-    )
-
     # Close thread
-    @thread_group.command(
-        name="close",
-        description="Close a thread. If used in a thread, closes the current thread."
+    @app_commands.command(
+        name="threadclose",
+        description="Close a thread. If used in a thread, closes the current thread.",
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_threads=True)
     @app_commands.describe(
         thread_id="The ID of the thread to close (optional if used inside a thread)"
     )
@@ -156,10 +150,12 @@ class Threads(commands.Cog):
 
 
     # Rename thread
-    @thread_group.command(
-        name="rename",
+    @app_commands.command(
+        name="threadrename",
         description="Rename a thread. If used in a thread, renames the current thread."
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_threads=True)
     @app_commands.describe(
         thread_id="The ID of the thread to rename (optional if used inside a thread)",
         name="The new name of the thread"
@@ -213,10 +209,12 @@ class Threads(commands.Cog):
 
 
     # Set slowmode for thread
-    @thread_group.command(
-        name="slowmode",
+    @app_commands.command(
+        name="threadslowmode",
         description="Set the slowmode for a thread. If used in a thread, sets the slowmode for the current thread."
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_threads=True)
     @app_commands.choices(duration=[
         discord.app_commands.Choice(name="off", value=0),
         discord.app_commands.Choice(name="3 seconds", value=3),
@@ -284,10 +282,12 @@ class Threads(commands.Cog):
 
 
     # Lock thread
-    @thread_group.command(
-        name="lock",
+    @app_commands.command(
+        name="threadlock",
         description="Lock a thread. If used in a thread, locks the current thread."
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_threads=True)
     @app_commands.describe(
         thread_id="The ID of the thread to lock (optional if used inside a thread)"
     )
@@ -340,10 +340,12 @@ class Threads(commands.Cog):
 
 
     # Unlock thread
-    @thread_group.command(
-        name="unlock",
+    @app_commands.command(
+        name="threadunlock",
         description="Unlock a thread. If used in a thread, locks the current thread."
     )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_threads=True)
     @app_commands.describe(
         thread_id="The ID of the thread to unlock (optional if used inside a thread)"
     )
