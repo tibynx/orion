@@ -90,7 +90,7 @@ class Webhook(commands.Cog):
         for webhook in webhooks:
             embed.add_field(
                 name=webhook.name,
-                value=f"ID: ||`{webhook.id}`||\nChannel: {webhook.channel.mention}\nCreated by: {webhook.user.mention}",
+                value=f"ID: ||`{webhook.id}`||\nURL: ||`{webhook.url}`||\nChannel: {webhook.channel.mention}\nCreated by: {webhook.user.mention}",
                 inline=False
             )
         return await interaction.response.send_message(embed=embed, ephemeral=True)
