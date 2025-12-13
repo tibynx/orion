@@ -3,7 +3,6 @@ from typing import Union
 import discord
 from discord.ext import commands
 from discord import app_commands
-import aiohttp
 
 from config import EMBED_COLOR, INFO_EMOJI, SUCCESS_EMOJI, ERROR_EMOJI
 
