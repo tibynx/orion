@@ -12,6 +12,7 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Remove colors from console logger
 # TODO: Make file logger rotate logs
 # TODO: Make file logger save logs to 'logs/' directory
+# TODO: Change logging style
 # TODO: Do pylint, and fix code
 # TODO: Remove unused/unnecessary code
 # TODO: Optimize code, check for better solutions
