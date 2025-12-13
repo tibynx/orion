@@ -226,6 +226,14 @@ class Webhook(commands.Cog):
             file_content = await file.read()
             message_content = file_content.decode('utf-8')
 
+            # Check if content exceeds Discord's character limit
+            if len(message_content) > 2000:
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} File content exceeds Discord's 2000 character limit! ({len(message_content)} characters)",
+                    ephemeral=True
+                )
+                return
+
             # Send the message
             webhook = await self.bot.fetch_webhook(webhook_id)
             await webhook.send(content=message_content)
@@ -262,6 +270,14 @@ class Webhook(commands.Cog):
             # Download and read the file content
             file_content = await file.read()
             message_content = file_content.decode('utf-8')
+
+            # Check if content exceeds Discord's character limit
+            if len(message_content) > 2000:
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} File content exceeds Discord's 2000 character limit! ({len(message_content)} characters)",
+                    ephemeral=True
+                )
+                return
 
             # Send the message
             async with aiohttp.ClientSession() as session:
