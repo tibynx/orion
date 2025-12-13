@@ -4,6 +4,12 @@ from discord import app_commands
 
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
+
+# TODO: Fix grammar
+# TODO: Do pylint, and fix code
+# TODO: Align code better
+
+
 # Create a modal for creating a new thread
 class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
     def __init__(self, message: discord.Message):

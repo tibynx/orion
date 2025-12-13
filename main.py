@@ -8,6 +8,30 @@ from discord.ext import commands
 
 from config import TOKEN, ERROR_EMOJI
 
+
+# TODO: Remove colors from console logger
+# TODO: Make file logger rotate logs
+# TODO: Make file logger save logs to 'logs/' directory
+# TODO: Do pylint, and fix code
+# TODO: Remove unused/unnecessary code
+# TODO: Optimize code, check for better solutions
+# TODO: Add a proper README.md, .gitignore, and requirements.txt
+# TODO: Rename 'commands/' to 'cogs/'
+# TODO: Remove commited secrets file and logs (oops..)
+# TODO: Make a setup.py for easy installation
+# TODO: Migrate using 'config.py' for constants like EMBED_COLOR and EMOJIS to use .env variables
+# TODO: Move loading secrets from 'config.py' to 'main.py'
+# TODO: Make a Dockerfile for easy deployment
+# TODO: Create a GitHub Workflow to check code with pylint on each push
+# TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
+# TODO: Make poetry config
+# TODO: Make IDEA run configurations for PyCharm
+
+# TODO: Make command to send messages as the bot (optionally in specific channels)
+# TODO: Make command to react to messages as the bot (optionally in specific channels)
+# TODO: Make command to purge messages
+
+
 # Set intents
 intents = discord.Intents.default()
 intents.message_content = True

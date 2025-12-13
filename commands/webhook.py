@@ -6,6 +6,12 @@ from discord import app_commands
 
 from config import EMBED_COLOR, INFO_EMOJI, SUCCESS_EMOJI, ERROR_EMOJI
 
+
+# TODO: Fix grammar
+# TODO: Align code better
+# TODO: Do pylint, and fix code
+
+
 # Modal for sending messages via webhook ID
 class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
     def __init__(self, bot):
