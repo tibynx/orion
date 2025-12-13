@@ -21,7 +21,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
         style=discord.TextStyle.long,
         placeholder="Enter the first message of the thread",
         required=True,
-        max_length=4000,
+        max_length=2000,
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
