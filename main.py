@@ -58,12 +58,12 @@ class DiscordBot(commands.Bot):
         for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/commands"):
             if file.endswith(".py"):
                 extension = file[:-3]
-                # try:
-                await self.load_extension(f"commands.{extension}")
-                self.logger.info(f"Loaded extension '{extension}'")
-                # except Exception as e:
-                #     exception = f"{type(e).__name__}: {e}"
-                #     self.logger.error(f"Failed to load extension '{extension}'\n{exception}")
+                try:
+                    await self.load_extension(f"commands.{extension}")
+                    self.logger.info(f"Loaded extension '{extension}'")
+                except Exception as e:
+                    exception = f"{type(e).__name__}: {e}"
+                    self.logger.error(f"Failed to load extension '{extension}'\n{exception}")
 
 
     async def setup_hook(self) -> None:
@@ -119,55 +119,24 @@ class DiscordBot(commands.Bot):
             send_func = interaction.response.send_message
 
 
-        # Command is on cooldown
-        if isinstance(error, app_commands.CommandOnCooldown):
-            minutes, seconds = divmod(error.retry_after, 60)
-            hours, minutes = divmod(minutes, 60)
-            hours = hours % 24
-            cooldown = []
-            if round(hours) > 0:
-                cooldown.append(f"{round(hours)} hours")
-            if round(minutes) > 0:
-                cooldown.append(f"{round(minutes)} minutes")
-            if round(seconds) > 0:
-                cooldown.append(f"{round(seconds)} seconds")
-            await send_func(
-                f"{ERROR_EMOJI} You can use this command again in {' '.join(cooldown)}!",
-                ephemeral=True
-            )
-
         # User doesn't have permission to execute the command
-        elif isinstance(error, app_commands.MissingPermissions):
+        if isinstance(error, app_commands.MissingPermissions) or isinstance(error, app_commands.errors.CheckFailure):
             await send_func(
-                f"{ERROR_EMOJI} You are missing permission(s) to execute this command: `{', '.join(error.missing_permissions)}`",
+                f"{ERROR_EMOJI} You don't have permissions to execute this command!",
                 ephemeral=True
             )
 
         # Bot doesn't have permission to execute the command
-        elif isinstance(error, app_commands.BotMissingPermissions):
+        elif isinstance(error, app_commands.BotMissingPermissions) or isinstance(error, discord.Forbidden):
             await send_func(
-                f"{ERROR_EMOJI} I am missing permission(s) to execute this command: `{', '.join(error.missing_permissions)}`",
+                f"{ERROR_EMOJI} I don't have permissions to execute this command!",
                 ephemeral=True
             )
 
         # Command doesn't exist'
         elif isinstance(error, app_commands.CommandNotFound):
             await send_func(
-                f"{ERROR_EMOJI} Command not found!",
-                ephemeral=True
-            )
-
-        # User doesn't have the required role to execute the command
-        elif isinstance(error, app_commands.MissingRole):
-            await send_func(
-                f"{ERROR_EMOJI} You are missing the required role to execute this command!",
-                ephemeral=True
-            )
-
-        # Command cannot be used in DMs
-        elif isinstance(error, app_commands.NoPrivateMessage):
-            await send_func(
-                f"{ERROR_EMOJI} This command cannot be used in private messages!",
+                f"{ERROR_EMOJI} Command not found. Refresh your client!",
                 ephemeral=True
             )
 
@@ -175,20 +144,6 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, app_commands.CommandInvokeError):
             await send_func(
                 f"{ERROR_EMOJI} An error occurred while executing the command: `{str(error).capitalize()}`",
-                ephemeral=True
-            )
-
-        # Bot doesn't have permission
-        elif isinstance(error, discord.Forbidden):
-            await send_func(
-                f"{ERROR_EMOJI} I do not have the required permissions to execute this command!",
-                ephemeral=True
-            )
-
-        # User is not authorized to use this command
-        elif isinstance(error, app_commands.errors.CheckFailure):
-            await send_func(
-                f"{ERROR_EMOJI} You do not have permission to execute this command!",
                 ephemeral=True
             )
 
