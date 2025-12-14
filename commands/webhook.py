@@ -92,7 +92,7 @@ class Webhook(commands.Cog):
             embed.add_field(name="Type", value=webhook.type.name.title(), inline=True)
             embed.add_field(name="Created by", value=webhook.user.mention, inline=True)
             embed.add_field(name="Created at", value=f"<t:{int(webhook.created_at.timestamp())}:R>", inline=True)
-            embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
+            embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
             embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
 
             if webhook.avatar:
@@ -149,7 +149,7 @@ class Webhook(commands.Cog):
         embed = discord.Embed(title=SUCCESS_EMOJI + " Webhook Created", color=EMBED_COLOR)
         embed.add_field(name="Name", value=webhook.name, inline=True)
         embed.add_field(name="Channel", value=channel.mention, inline=True)
-        embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
+        embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
         embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
