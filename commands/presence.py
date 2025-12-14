@@ -7,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # TODO: Do pylint, and fix code
 # TODO: Add more comments
-# TODO: Add missing activity types: listening, watching, playing
 
 
 class Presence(commands.Cog):
@@ -112,6 +111,55 @@ class Presence(commands.Cog):
         )
 
 
+    # Set activity to playing
+    @activity_set_group.command(
+        name="playing",
+        description="Set the bot's activity to playing."
+    )
+    @app_commands.describe(
+        title="The name of the game being played.",
+        description="The description of the activity."
+    )
+    async def activity_playing(self, interaction: discord.Interaction, title: str, description: str = None):
+        self.current_activity = discord.Activity(type=discord.ActivityType.playing, name=title, state=description)
+        await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
+        await interaction.response.send_message(
+            f"{SUCCESS_EMOJI} Activity set to: **Playing** {title}",
+            ephemeral=True)
+
+
+    # Set activity to listening
+    @activity_set_group.command(
+        name="listening",
+        description="Set the bot's activity to listening."
+    )
+    @app_commands.describe(
+        title="The name of what the bot is listening to.",
+        description="The description of the activity."
+    )
+    async def activity_listening(self, interaction: discord.Interaction, title: str, description: str = None):
+        self.current_activity = discord.Activity(type=discord.ActivityType.listening, name=title, state=description)
+        await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
+        await interaction.response.send_message(
+            f"{SUCCESS_EMOJI} Activity set to: **Listening to** {title}",
+            ephemeral=True)
+
+
+    # Set activity to watching
+    @activity_set_group.command(
+        name="watching",
+        description="Set the bot's activity to watching."
+    )
+    @app_commands.describe(
+        title="The name of what the bot is watching.",
+        description="The description of the activity."
+    )
+    async def activity_watching(self, interaction: discord.Interaction, title: str, description: str = None):
+        self.current_activity = discord.Activity(type=discord.ActivityType.watching, name=title, state=description)
+        await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
+        await interaction.response.send_message(
+            f"{SUCCESS_EMOJI} Activity set to: **Watching** {title}",
+            ephemeral=True)
 
 
 
