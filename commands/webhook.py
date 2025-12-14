@@ -35,6 +35,12 @@ class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         try:
             webhook = await self.bot.fetch_webhook(self.webhook_id.value)
+            if isinstance(webhook.channel, discord.ForumChannel):
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
+                    ephemeral=True
+                )
+                return
             await webhook.send(content=self.message.value)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Message sent successfully!",
