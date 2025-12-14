@@ -157,6 +157,12 @@ class Message(commands.Cog):
         interaction: discord.Interaction,
         user: discord.User,
     ):
+        if user == self.bot.user:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} I cannot send a direct message to myself!",
+                ephemeral=True
+            )
+            return
         await interaction.response.send_modal(DmModal(user)) # Send the DM modal
 
 
