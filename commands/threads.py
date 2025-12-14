@@ -31,36 +31,30 @@ class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        try:
-            # Create the thread from the message
-            thread = await self.message.create_thread(
-                name=self.name.value,
-                auto_archive_duration=4320  # 3 days
-            )
+        # Create the thread from the message
+        thread = await self.message.create_thread(
+            name=self.name.value,
+            auto_archive_duration=4320  # 3 days
+        )
 
-            # Send the first message in the thread
-            await thread.send(content=self.first_message.value)
+        # Send the first message in the thread
+        await thread.send(content=self.first_message.value)
 
-            await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Thread created successfully!",
-                ephemeral=True
-            )
-        except discord.Forbidden:
+        await interaction.response.send_message(
+            f"{SUCCESS_EMOJI} Thread created successfully!",
+            ephemeral=True
+        )
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        if isinstance(error, discord.Forbidden):
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} I don't have permission to create threads in this channel!",
                 ephemeral=True
             )
-        except discord.HTTPException as e:
+        else:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to create thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} An error occurred while creating the thread: `{str(error).capitalize()}`",
                 ephemeral=True
             )
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while creating the thread: `{str(error).capitalize()}`",
-            ephemeral=True
-        )
 
 
 class Threads(commands.Cog):

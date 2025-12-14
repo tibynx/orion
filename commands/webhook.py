@@ -33,35 +33,30 @@ class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        try:
-            webhook = await self.bot.fetch_webhook(self.webhook_id.value)
-            if isinstance(webhook.channel, discord.ForumChannel):
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
-                    ephemeral=True
-                )
-                return
-            await webhook.send(content=self.message.value)
+        webhook = await self.bot.fetch_webhook(self.webhook_id.value)
+        if isinstance(webhook.channel, discord.ForumChannel):
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Message sent successfully!",
+                f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
                 ephemeral=True
             )
-        except discord.NotFound:
+            return
+        await webhook.send(content=self.message.value)
+        await interaction.response.send_message(
+            f"{SUCCESS_EMOJI} Message sent successfully!",
+            ephemeral=True
+        )
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        if isinstance(error, discord.NotFound):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found!",
                 ephemeral=True
             )
-        except discord.HTTPException as e:
+        else:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to send message: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
                 ephemeral=True
             )
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
-            ephemeral=True
-        )
 
 
 class Webhook(commands.Cog):
