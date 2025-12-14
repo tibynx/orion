@@ -28,7 +28,6 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Make poetry config
 # TODO: Make IDEA run configurations for PyCharm
 
-# TODO: Make command to send messages as the bot (optionally in specific channels)
 # TODO: Make command to react to messages as the bot (optionally in specific channels)
 # TODO: Make command to purge messages
 
