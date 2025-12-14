@@ -1,11 +1,9 @@
 import logging
 import traceback
 import os
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-
 from config import TOKEN, ERROR_EMOJI
 
 
@@ -23,6 +21,7 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
 # TODO: Make poetry config
 # TODO: Make IDEA run configurations for PyCharm
+# TODO: Fix command definitions's name
 
 # TODO: Make command to react to messages as the bot (optionally in specific channels)
 # TODO: Make command to purge messages
@@ -35,13 +34,13 @@ intents.message_content = True
 # Set up logging
 logs_dir = os.path.join(os.path.dirname(__file__), "logs")
 os.makedirs(logs_dir, exist_ok=True)
-timestamp = discord.utils.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+timestamp = discord.utils.utcnow().strftime("%Y-%m-%d_%H-%M-%S") # UTC timestamp
 log_filename = os.path.join(logs_dir, f"log_{timestamp}.log")
 
 logger = logging.getLogger("discord.app")
 logger.setLevel(logging.INFO)
 log_handler = logging.FileHandler(filename=log_filename, encoding="utf-8", mode="w")
-log_format = "[{asctime}] [{levelname:<8}] {name}: {message}"
+log_format = "[{asctime}] [{levelname:<8}] {name}: {message}" # Using Python's standard formatting style
 log_formatter = logging.Formatter(log_format, "%Y-%m-%d %H:%M:%S", style="{")
 log_handler.setFormatter(log_formatter)
 logger.addHandler(log_handler)
@@ -49,14 +48,14 @@ logger.addHandler(log_handler)
 
 class DiscordBot(commands.Bot):
     def __init__(self) -> None:
-        super().__init__(command_prefix="", intents=intents)
+        super().__init__(command_prefix="", intents=intents) # No prefix since we use app commands
         self.logger = logger
 
 
     # Load cogs
     async def load_cogs(self) -> None:
         for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/commands"):
-            if file.endswith(".py"):
+            if file.endswith(".py"): # Only load python files
                 extension = file[:-3]
                 try:
                     await self.load_extension(f"commands.{extension}")
@@ -74,7 +73,7 @@ class DiscordBot(commands.Bot):
 
         # Sync interactions
         try:
-            synced = await bot.tree.sync()
+            synced = await bot.tree.sync() # Sync all commands globally
             self.logger.info(f"Synced {len(synced)} command(s)")
         except Exception as e:
             exception = f"{type(e).__name__}: {e}"
@@ -91,7 +90,6 @@ class DiscordBot(commands.Bot):
 
     # Log app command execution
     async def on_app_command_completion(self, interaction: discord.Interaction, command: app_commands.Command) -> None:
-        """Log successful app command (slash command) executions"""
         if interaction.guild is not None:
             self.logger.info(
                 f"User {interaction.user} (ID: {interaction.user.id}) executed the '{command.qualified_name}' interaction in "
@@ -104,12 +102,10 @@ class DiscordBot(commands.Bot):
 
     # Log command errors
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
-        """Handle general errors"""
         self.logger.error(f"An error occurred in {event_name}")
         traceback.print_exc()
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
-        """Handle app command (slash command) errors"""
         command_name = interaction.command.name if interaction.command else "Unknown command"
 
         # Check if interaction was already responded to
@@ -134,7 +130,7 @@ class DiscordBot(commands.Bot):
             )
 
         # Command doesn't exist'
-        elif isinstance(error, app_commands.CommandNotFound):
+        elif isinstance(error, app_commands.CommandNotFound): # Happens when a command is updated but the client hasn't refreshed
             await send_func(
                 f"{ERROR_EMOJI} Command not found. Refresh your client!",
                 ephemeral=True

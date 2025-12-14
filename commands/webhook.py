@@ -1,14 +1,11 @@
 from typing import Union
-
 import discord
 from discord.ext import commands
 from discord import app_commands
-
 from config import EMBED_COLOR, INFO_EMOJI, SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Fix grammar
-# TODO: Align code better
 # TODO: Do pylint, and fix code
 
 
@@ -34,6 +31,7 @@ class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         webhook = await self.bot.fetch_webhook(self.webhook_id.value)
+        # Prevent sending messages to forum channels
         if isinstance(webhook.channel, discord.ForumChannel):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
@@ -45,7 +43,6 @@ class WebhookSendModal(discord.ui.Modal, title="Send Message via Webhook"):
             f"{SUCCESS_EMOJI} Message sent successfully!",
             ephemeral=True
         )
-
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
             await interaction.response.send_message(
@@ -63,14 +60,15 @@ class Webhook(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
-    # Group for webhook management
+    # Group for editing webhooks
     webhook_edit_group = app_commands.Group(
         name="webhookedit",
         description="Edit webhook details",
-        default_permissions=discord.Permissions(manage_webhooks=True),
+        default_permissions=discord.Permissions(manage_webhooks=True), # Requires manage webhooks permission
         guild_only=True
     )
+
+
 
     # Get details about a webhook
     @app_commands.command(
@@ -78,12 +76,11 @@ class Webhook(commands.Cog):
         description="Get details about a webhook"
     )
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_webhooks=True)
+    @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
     @app_commands.describe(
         webhook_id="The ID of the webhook to fetch"
     )
     async def get_webhook(self, interaction: discord.Interaction, webhook_id: str) -> None:
-        """Get details about a webhook by its ID"""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             embed = discord.Embed(title=INFO_EMOJI + " Webhook Details", color=EMBED_COLOR)
@@ -94,10 +91,9 @@ class Webhook(commands.Cog):
             embed.add_field(name="Created at", value=f"<t:{int(webhook.created_at.timestamp())}:R>", inline=True)
             embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
             embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
-
+            # Check if the webhook has an avatar
             if webhook.avatar:
                 embed.set_thumbnail(url=webhook.avatar.url)
-
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         except discord.NotFound:
             return await interaction.response.send_message(f"{ERROR_EMOJI} The specified webhook cannot be found!", ephemeral=True)
@@ -109,16 +105,15 @@ class Webhook(commands.Cog):
         description="List all webhooks in the current server"
     )
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_webhooks=True)
+    @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
     async def list_webhook(self, interaction: discord.Interaction) -> None:
-        """List all webhooks in the current server"""
         webhooks = await interaction.guild.webhooks()
+        # Check if there are no webhooks
         if not webhooks:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} No webhooks found in this server!",
                 ephemeral=True
             )
-
         embed = discord.Embed(title=f"{INFO_EMOJI} Webhooks in this Server", color=EMBED_COLOR)
         for webhook in webhooks:
             embed.add_field(
@@ -128,13 +123,14 @@ class Webhook(commands.Cog):
             )
         return await interaction.response.send_message(embed=embed, ephemeral=True)
 
+
     # Create a webhook
     @app_commands.command(
         name="webhookcreate",
         description="Create a webhook. The webhook will be associated with this bot!"
     )
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_webhooks=True)
+    @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
     @app_commands.describe(
         channel="The channel to create the webhook in",
         name="The name of the webhook"
@@ -144,7 +140,6 @@ class Webhook(commands.Cog):
         channel: Union[discord.TextChannel, discord.ForumChannel, discord.StageChannel, discord.VoiceChannel],
         name: str
     ) -> None:
-        """Create a webhook in the specified channel with the given name"""
         webhook = await channel.create_webhook(name=name)
         embed = discord.Embed(title=SUCCESS_EMOJI + " Webhook Created", color=EMBED_COLOR)
         embed.add_field(name="Name", value=webhook.name, inline=True)
@@ -152,6 +147,7 @@ class Webhook(commands.Cog):
         embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
         embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
     # Delete a webhook
     @app_commands.command(
@@ -164,7 +160,6 @@ class Webhook(commands.Cog):
         webhook_id="The ID of the webhook to delete"
     )
     async def delete_webhook(self, interaction: discord.Interaction, webhook_id: str) -> None:
-        """Delete a webhook by its ID"""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             await webhook.delete()
@@ -192,8 +187,8 @@ class Webhook(commands.Cog):
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True)
     async def webhook_send_id(self, interaction: discord.Interaction) -> None:
-        """Open a modal to send a message through a webhook ID"""
-        await interaction.response.send_modal(WebhookSendModal(self.bot))
+        await interaction.response.send_modal(WebhookSendModal(self.bot)) # Send the webhook message modal
+
 
     # Change the name of a webhook
     @webhook_edit_group.command(
@@ -205,7 +200,6 @@ class Webhook(commands.Cog):
         name="The new name of the webhook"
     )
     async def webhook_edit_name(self, interaction: discord.Interaction, webhook_id: str, name: str) -> None:
-        """Edit the name of a webhook"""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             await webhook.edit(name=name)
@@ -219,6 +213,7 @@ class Webhook(commands.Cog):
                 ephemeral=True
             )
 
+
     # Change the avatar of a webhook
     @webhook_edit_group.command(
         name="avatar",
@@ -229,7 +224,6 @@ class Webhook(commands.Cog):
         avatar="The new avatar of the webhook"
     )
     async def webhook_edit_avatar(self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment) -> None:
-        """Edit the avatar of a webhook"""
         if not avatar.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} Only .png, .jpg, .jpeg, and .gif files are supported!",
@@ -263,7 +257,6 @@ class Webhook(commands.Cog):
         self, interaction: discord.Interaction, webhook_id: str,
         channel: Union[discord.TextChannel, discord.ForumChannel, discord.StageChannel, discord.VoiceChannel]
     ) -> None:
-        """Edit the channel of a webhook"""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             await webhook.edit(channel=channel)

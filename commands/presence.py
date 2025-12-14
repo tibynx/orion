@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
@@ -15,41 +14,42 @@ class Presence(commands.Cog):
         self.current_status = discord.Status.online  # Default status
         self.current_activity: discord.BaseActivity | None = None  # Track current activity
 
-
     # Group for changing bot activity
     activity_set_group = app_commands.Group(
         name="activityset",
         description="Set ",
-        default_permissions=discord.Permissions(manage_guild=True),
+        default_permissions=discord.Permissions(manage_guild=True), # Requires manage guild permission
         guild_only=True
     )
+
 
     # Clear activity
     @app_commands.command(
         name="activityclear",
         description="Clear the bot's activity and status.",
     )
-    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
     @app_commands.guild_only()
     async def activity_clear(self, interaction: discord.Interaction):
         self.current_activity = None
-        await self.bot.change_presence(status=self.current_status, activity=None)
+        await self.bot.change_presence(status=self.current_status, activity=None) # Keep the current status, clear activity
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Presence and status have been cleared.",
             ephemeral=True
         )
+
 
     # Set status
     @app_commands.command(
         name="statusset",
         description="Set the bot's presence status."
     )
-    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
     @app_commands.guild_only()
     @app_commands.describe(
         status="The status to set the bot to."
     )
-    @app_commands.choices(
+    @app_commands.choices( # List of status choices
         status=[
             app_commands.Choice(name="Online", value="online"),
             app_commands.Choice(name="Idle", value="idle"),
@@ -58,7 +58,7 @@ class Presence(commands.Cog):
         ]
     )
     async def status_set(self, interaction: discord.Interaction, status: app_commands.Choice[str]):
-        status_mapping = {
+        status_mapping = { # Map string choices to discord.Status
             "online": discord.Status.online,
             "idle": discord.Status.idle,
             "dnd": discord.Status.do_not_disturb,
@@ -66,7 +66,7 @@ class Presence(commands.Cog):
         }
 
         self.current_status = status_mapping[status.value]
-        await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
+        await self.bot.change_presence(status=self.current_status, activity=self.current_activity) # Set the new status, keep current activity
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Changed status to: **{status.name}**",
             ephemeral=True
@@ -80,10 +80,10 @@ class Presence(commands.Cog):
     @app_commands.describe(
         title="The title of the stream.",
         description="The description of the activity.",
-        url="The URL of the stream. (Must be a valid Twitch or YouTube URL.)"
+        url="The URL of the stream. (Must be a valid Twitch or YouTube URL.)" # Only Twitch and YouTube are supported by Discord
     )
     async def activity_streaming(self, interaction: discord.Interaction, title: str, url: str, description: str = None):
-        if not url or not url.startswith("https://"):
+        if not url or not url.startswith("https://"): # Check for valid URL, only https is supported
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You must provide a valid URL for the stream! Example: `https://www.twitch.tv/your_channel`")
         self.current_activity = discord.Activity(type=discord.ActivityType.streaming, name=title, url=url, state=description)
