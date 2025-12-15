@@ -91,6 +91,7 @@ class Webhook(commands.Cog):
             embed.add_field(name="Created at", value=f"<t:{int(webhook.created_at.timestamp())}:R>", inline=True)
             embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
             embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
+            embed.set_footer(text="ⓘ Webhook details are hidden for security purposes.")
             # Check if the webhook has an avatar
             if webhook.avatar:
                 embed.set_thumbnail(url=webhook.avatar.url)
@@ -121,6 +122,7 @@ class Webhook(commands.Cog):
                 value=f"ID: ||`{webhook.id}`||\nURL: ||`{webhook.url}`||\nChannel: {webhook.channel.mention}\nCreated by: {webhook.user.mention}",
                 inline=False
             )
+        embed.set_footer(text="ⓘ Webhook details are hidden for security purposes.")
         return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
@@ -146,6 +148,7 @@ class Webhook(commands.Cog):
         embed.add_field(name="Channel", value=channel.mention, inline=True)
         embed.add_field(name="ID", value=f"||`{webhook.id}`||", inline=True)
         embed.add_field(name="URL", value=f"||`{webhook.url}`||", inline=False)
+        embed.set_footer(text="ⓘ Webhook details are hidden for security purposes.")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
@@ -209,7 +212,7 @@ class Webhook(commands.Cog):
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Invalid webhook URL!",
+                f"{ERROR_EMOJI} Invalid webhook ID!",
                 ephemeral=True
             )
 
@@ -239,7 +242,7 @@ class Webhook(commands.Cog):
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Invalid webhook URL!",
+                f"{ERROR_EMOJI} Invalid webhook ID!",
                 ephemeral=True
             )
 
@@ -266,7 +269,7 @@ class Webhook(commands.Cog):
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Invalid webhook URL!",
+                f"{ERROR_EMOJI} Invalid webhook ID!",
                 ephemeral=True
             )
 
