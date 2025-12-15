@@ -117,10 +117,17 @@ class Message(commands.Cog):
 
         # Context menu command for replying to a message
         self.reply_command = app_commands.ContextMenu(
-            name="Reply",
+            name="Reply to Message",
             callback=self.reply_command_callback
         )
         self.bot.tree.add_command(self.reply_command)
+
+        # User command for sending a direct message
+        self.dm_command = app_commands.ContextMenu(
+            name="Send Direct Message",
+            callback=self.dm_command_callback
+        )
+        self.bot.tree.add_command(self.dm_command)
 
 
 
@@ -171,6 +178,19 @@ class Message(commands.Cog):
     @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
     async def reply_command_callback(self, interaction: discord.Interaction, message: discord.Message):
         await interaction.response.send_modal(ReplyModal(message)) # Send the reply modal
+
+
+    # Callback for the send DM user command
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
+    async def dm_command_callback(self, interaction: discord.Interaction, user: discord.User):
+        if user == self.bot.user:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} I cannot send a direct message to myself!",
+                ephemeral=True
+            )
+            return
+        await interaction.response.send_modal(DmModal(user)) # Send the DM modal
 
 
 
