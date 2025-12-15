@@ -17,7 +17,7 @@ class Presence(commands.Cog):
     # Group for changing bot activity
     activity_set_group = app_commands.Group(
         name="activityset",
-        description="Set ",
+        description="Set the bot's activity and status.",
         default_permissions=discord.Permissions(manage_guild=True), # Requires manage guild permission
         guild_only=True
     )
@@ -32,7 +32,8 @@ class Presence(commands.Cog):
     @app_commands.guild_only()
     async def activity_clear(self, interaction: discord.Interaction):
         self.current_activity = None
-        await self.bot.change_presence(status=self.current_status, activity=None) # Keep the current status, clear activity
+        self.current_status = discord.Status.online
+        await self.bot.change_presence(status=self.current_status, activity=None) # Set status to online, clear activity
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Presence and status have been cleared.",
             ephemeral=True
@@ -40,9 +41,9 @@ class Presence(commands.Cog):
 
 
     # Set status
-    @app_commands.command(
-        name="statusset",
-        description="Set the bot's presence status."
+    @activity_set_group.command(
+        name="indicator",
+        description="Set the bot's status indicator."
     )
     @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
     @app_commands.guild_only()
@@ -58,7 +59,8 @@ class Presence(commands.Cog):
         ]
     )
     async def status_set(self, interaction: discord.Interaction, status: app_commands.Choice[str]):
-        status_mapping = { # Map string choices to discord.Status
+        # Map string choices to discord.Status
+        status_mapping = {
             "online": discord.Status.online,
             "idle": discord.Status.idle,
             "dnd": discord.Status.do_not_disturb,
