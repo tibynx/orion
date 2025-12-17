@@ -1,6 +1,0 @@
-[2025-08-10 10:16:04] [INFO    ] discord_bot: Logged in as TestBot04#0354 (ID: 1238163113313042453)
-[2025-08-10 10:16:04] [INFO    ] discord_bot: discord.py version: 2.5.2
-[2025-08-10 10:16:04] [INFO    ] discord_bot: -------------------
-[2025-08-10 10:16:04] [INFO    ] discord_bot: Loaded extension 'threads'
-[2025-08-10 10:16:04] [INFO    ] discord_bot: Loaded extension 'webhook'
-[2025-08-10 10:16:05] [INFO    ] discord_bot: Synced 4 command(s)
