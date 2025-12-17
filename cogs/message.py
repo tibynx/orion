@@ -33,7 +33,6 @@ class MessageModal(discord.ui.Modal):
             f"{ERROR_EMOJI} Modal timed out. Please try again.",
             ephemeral=True
         )
-
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(
             f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
@@ -159,11 +158,7 @@ class Message(commands.Cog):
     @app_commands.describe(
         user="The user to send the direct message to."
     )
-    async def send_dm_modal(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User,
-    ):
+    async def send_dm_modal(self, interaction: discord.Interaction, user: discord.User):
         if user == self.bot.user:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a direct message to myself!",

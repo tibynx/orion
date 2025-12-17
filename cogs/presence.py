@@ -48,7 +48,7 @@ class Presence(commands.Cog):
     @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
     @app_commands.guild_only()
     @app_commands.describe(
-        status="The status to set the bot to."
+        status="The status to set for the bot."
     )
     @app_commands.choices( # List of status choices
         status=[
@@ -58,7 +58,7 @@ class Presence(commands.Cog):
             app_commands.Choice(name="Invisible", value="invisible"),
         ]
     )
-    async def status_set(self, interaction: discord.Interaction, status: app_commands.Choice[str]):
+    async def activity_indicator(self, interaction: discord.Interaction, status: app_commands.Choice[str]):
         # Map string choices to discord.Status
         status_mapping = {
             "online": discord.Status.online,
@@ -66,7 +66,6 @@ class Presence(commands.Cog):
             "dnd": discord.Status.do_not_disturb,
             "invisible": discord.Status.invisible,
         }
-
         self.current_status = status_mapping[status.value]
         await self.bot.change_presence(status=self.current_status, activity=self.current_activity) # Set the new status, keep current activity
         await interaction.response.send_message(

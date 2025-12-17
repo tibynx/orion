@@ -7,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # TODO: Fix grammar
 # TODO: Do pylint, and fix code
-# TODO: Add optional attachments to the webhook message modal
 
 
 # Modal for sending messages via webhook ID
@@ -32,16 +31,10 @@ class WebhookSendModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        if isinstance(error, discord.NotFound):
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
-                ephemeral=True
-            )
-        else:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
-                ephemeral=True
-            )
+        await interaction.response.send_message(
+            f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
+            ephemeral=True
+        )
 
 
 # Webhook deletion dialog
@@ -275,25 +268,22 @@ class Webhook(commands.Cog):
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.NotFound:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found!",
                 ephemeral=True
             )
-            return
         # Prevent sending messages to forum channels
         if isinstance(webhook.channel, discord.ForumChannel):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
                 ephemeral=True
             )
-            return
         # Check if it's a channel follower or application webhook
         if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages with this webhook!",
                 ephemeral=True
             )
-            return
         await interaction.response.send_modal(WebhookSendModal(self.bot, webhook)) # Send the webhook message modal
 
 
@@ -311,7 +301,10 @@ class Webhook(commands.Cog):
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
             if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
-                return await interaction.response.send_message(f"{ERROR_EMOJI} You cannot rename this webhook!", ephemeral=True)
+                return await interaction.response.send_message(
+                    f"{ERROR_EMOJI} You cannot rename this webhook!",
+                    ephemeral=True
+                )
             old_name = webhook.name
             await webhook.edit(name=name)
             await interaction.response.send_message(
@@ -336,11 +329,10 @@ class Webhook(commands.Cog):
     )
     async def webhook_edit_avatar(self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment) -> None:
         if not avatar.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} Only .png, .jpg, .jpeg, and .gif files are supported!",
                 ephemeral=True
             )
-            return
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
@@ -379,7 +371,7 @@ class Webhook(commands.Cog):
             # Check if it's a channel follower or application webhook
             if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
                 return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} You cannot change channel for this webhook!",
+                    f"{ERROR_EMOJI} You cannot change the channel for this webhook!",
                     ephemeral=True
                 )
             await webhook.edit(channel=channel)

@@ -19,10 +19,10 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
 # TODO: Make poetry config
 # TODO: Make IDEA run configurations for PyCharm
-# TODO: Fix command definitions's name
 
 # TODO: Make command to react to messages as the bot (optionally in specific channels)
 # TODO: Make command to purge messages
+# TODO: Make command to delete pinned messages in a channel
 
 
 # Set intents

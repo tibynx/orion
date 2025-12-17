@@ -6,7 +6,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # TODO: Fix grammar
 # TODO: Do pylint, and fix code
-# TODO: Align code better
 
 
 # Create a modal for creating a new thread
@@ -61,33 +60,29 @@ class Threads(commands.Cog):
         # Context menu command for creating a new thread
         self.thread_command = app_commands.ContextMenu(
             name="Create Thread",
-            callback=self.thread_create_command_callback
+            callback=self.thread_create_callback
         )
         self.bot.tree.add_command(self.thread_command)
 
 
 
-    # Callback for the 'new thread' command in context menu
+    # Callback for the 'new thread' command in a context menu
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_threads=True)
-    async def thread_create_command_callback(self, interaction: discord.Interaction, message: discord.Message) -> None:
-        """Callback for the context menu interaction"""
+    async def thread_create_callback(self, interaction: discord.Interaction, message: discord.Message) -> None:
         # Check if the channel type supports threads
         if not isinstance(message.channel, (discord.TextChannel, discord.ForumChannel)):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} Threads can only be created in text channels or forums!",
                 ephemeral=True
             )
-            return
         # Check if the message already has a thread
-        if message.thread:
-            await interaction.response.send_message(
+        elif message.thread:
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} This message already has a thread!",
                 ephemeral=True
             )
-            return
-
-        await interaction.response.send_modal(CreateThreadModal(message))
+        return await interaction.response.send_modal(CreateThreadModal(message))
 
 
     # Close thread
@@ -100,7 +95,7 @@ class Threads(commands.Cog):
     @app_commands.describe(
         thread_id="The ID of the thread to close (optional if used inside a thread)"
     )
-    async def close_thread(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+    async def thread_close(self, interaction: discord.Interaction, thread_id: str = None) -> None:
         # Check if we're in a thread
         if isinstance(interaction.channel, discord.Thread):
             thread = interaction.channel
@@ -108,16 +103,6 @@ class Threads(commands.Cog):
         elif thread_id:
             try:
                 thread = await self.bot.fetch_channel(int(thread_id))
-                if not isinstance(thread, discord.Thread):
-                    return await interaction.response.send_message(
-                        f"{ERROR_EMOJI} The provided ID is not a thread!",
-                        ephemeral=True
-                    )
-            except ValueError:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Invalid thread ID!",
-                    ephemeral=True
-                )
             except discord.NotFound:
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} The specified thread cannot be found!",
@@ -157,7 +142,7 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to rename (optional if used inside a thread)",
         name="The new name of the thread"
     )
-    async def rename_thread(self, interaction: discord.Interaction, name: str, thread_id: str = None) -> None:
+    async def thread_rename(self, interaction: discord.Interaction, name: str, thread_id: str = None) -> None:
         # Check if we're in a thread
         if isinstance(interaction.channel, discord.Thread):
             thread = interaction.channel
@@ -165,16 +150,6 @@ class Threads(commands.Cog):
         elif thread_id:
             try:
                 thread = await self.bot.fetch_channel(int(thread_id))
-                if not isinstance(thread, discord.Thread):
-                    return await interaction.response.send_message(
-                        f"{ERROR_EMOJI} The provided ID is not a thread!",
-                        ephemeral=True
-                    )
-            except ValueError:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Invalid thread ID!",
-                    ephemeral=True
-                )
             except discord.NotFound:
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} The specified thread cannot be found!",
@@ -187,7 +162,7 @@ class Threads(commands.Cog):
             )
         try:
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Thread has been renamed to: `{name}`",
+                f"{SUCCESS_EMOJI} Thread has been renamed to: **{name}**",
                 ephemeral=True
             )
             await thread.edit(name=name)
@@ -236,16 +211,6 @@ class Threads(commands.Cog):
         elif thread_id:
             try:
                 thread = await self.bot.fetch_channel(int(thread_id))
-                if not isinstance(thread, discord.Thread):
-                    return await interaction.response.send_message(
-                        f"{ERROR_EMOJI} The provided ID is not a thread!",
-                        ephemeral=True
-                    )
-            except ValueError:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Invalid thread ID!",
-                    ephemeral=True
-                )
             except discord.NotFound:
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} The specified thread cannot be found!",
@@ -284,7 +249,7 @@ class Threads(commands.Cog):
     @app_commands.describe(
         thread_id="The ID of the thread to lock (optional if used inside a thread)"
     )
-    async def lock_thread(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+    async def thread_lock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
         # Check if we're in a thread
         if isinstance(interaction.channel, discord.Thread):
             thread = interaction.channel
@@ -292,16 +257,6 @@ class Threads(commands.Cog):
         elif thread_id:
             try:
                 thread = await self.bot.fetch_channel(int(thread_id))
-                if not isinstance(thread, discord.Thread):
-                    return await interaction.response.send_message(
-                        f"{ERROR_EMOJI} The provided ID is not a thread!",
-                        ephemeral=True
-                    )
-            except ValueError:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Invalid thread ID!",
-                    ephemeral=True
-                )
             except discord.NotFound:
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} The specified thread cannot be found!",
@@ -340,7 +295,7 @@ class Threads(commands.Cog):
     @app_commands.describe(
         thread_id="The ID of the thread to unlock (optional if used inside a thread)"
     )
-    async def unlock_thread(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+    async def thread_unlock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
         # Check if we're in a thread
         if isinstance(interaction.channel, discord.Thread):
             thread = interaction.channel
@@ -348,16 +303,6 @@ class Threads(commands.Cog):
         elif thread_id:
             try:
                 thread = await self.bot.fetch_channel(int(thread_id))
-                if not isinstance(thread, discord.Thread):
-                    return await interaction.response.send_message(
-                        f"{ERROR_EMOJI} The provided ID is not a thread!",
-                        ephemeral=True
-                    )
-            except ValueError:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Invalid thread ID!",
-                    ephemeral=True
-                )
             except discord.NotFound:
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} The specified thread cannot be found!",
