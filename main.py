@@ -46,7 +46,8 @@ logger.addHandler(log_handler)
 
 class DiscordBot(commands.Bot):
     def __init__(self) -> None:
-        super().__init__(command_prefix="", intents=intents) # No prefix since we use app commands
+        # No prefix since we use app commands
+        super().__init__(command_prefix="", intents=intents)
         self.logger = logger
 
 
@@ -102,6 +103,11 @@ class DiscordBot(commands.Bot):
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
         self.logger.error(f"An error occurred in {event_name}")
         traceback.print_exc()
+
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        if isinstance(error, commands.CommandNotFound):
+            return  # Ignore command not found errors
+        self.logger.error(f"An unhandled command error occurred: {error}")
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
         command_name = interaction.command.name if interaction.command else "Unknown command"
