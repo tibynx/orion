@@ -11,8 +11,6 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Remove unused/unnecessary code
 # TODO: Optimize code, check for better solutions
 # TODO: Add a proper README.md, .gitignore, and requirements.txt
-# TODO: Rename 'commands/' to 'cogs/'
-# TODO: Remove commited secrets file and logs (oops..)
 # TODO: Make a setup.py for easy installation
 # TODO: Migrate using 'config.py' for constants like EMBED_COLOR and EMOJIS to use .env variables
 # TODO: Move loading secrets from 'config.py' to 'main.py'
@@ -54,11 +52,11 @@ class DiscordBot(commands.Bot):
 
     # Load cogs
     async def load_cogs(self) -> None:
-        for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/commands"):
+        for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/cogs"):
             if file.endswith(".py"): # Only load python files
                 extension = file[:-3]
                 try:
-                    await self.load_extension(f"commands.{extension}")
+                    await self.load_extension(f"cogs.{extension}")
                     self.logger.info(f"Loaded extension '{extension}'")
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
@@ -74,10 +72,10 @@ class DiscordBot(commands.Bot):
         # Sync interactions
         try:
             synced = await bot.tree.sync() # Sync all commands globally
-            self.logger.info(f"Synced {len(synced)} command(s)")
+            self.logger.info(f"Synced {len(synced)} interactions globally")
         except Exception as e:
             exception = f"{type(e).__name__}: {e}"
-            self.logger.error(f"Failed to sync commands\n{exception}")
+            self.logger.error(f"Failed to sync interaction: {exception}")
 
 
     # Log guild join
