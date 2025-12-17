@@ -38,7 +38,7 @@ class MessageModal(discord.ui.Modal):
 # Modal for sending a direct message to a user
 class DmModal(discord.ui.Modal):
     def __init__(self, user: discord.User):
-        super().__init__(title=f"Message {user.name}", timeout=600) # 10-minute timeout
+        super().__init__(title=f"Message {user.name}")
         self.user = user
 
     message = discord.ui.TextInput(
@@ -53,11 +53,6 @@ class DmModal(discord.ui.Modal):
         await self.user.send(self.message.value)
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}!",
-            ephemeral=True
-        )
-    async def on_timeout(self, interaction: discord.Interaction) -> None: # Intentional timeout to avoid errors
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} Modal timed out. Please try again.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
@@ -76,7 +71,7 @@ class DmModal(discord.ui.Modal):
 # Modal for replying to a message
 class ReplyModal(discord.ui.Modal):
     def __init__(self, message: discord.Message):
-        super().__init__(title=f"Reply to {message.author.name}", timeout=600) # 10-minute timeout
+        super().__init__(title=f"Reply to {message.author.name}")
         self.message = message
 
     reply_message = discord.ui.TextInput(
@@ -91,11 +86,6 @@ class ReplyModal(discord.ui.Modal):
         await self.message.reply(self.reply_message.value)
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Reply sent to {self.message.author.mention} successfully!",
-            ephemeral=True
-        )
-    async def on_timeout(self, interaction: discord.Interaction) -> None: # Intentional timeout to avoid errors
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} Modal timed out. Please try again.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
