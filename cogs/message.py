@@ -11,7 +11,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 # Modal for sending a message in a channel
 class MessageModal(discord.ui.Modal):
     def __init__(self, channel: discord.abc.Messageable):
-        super().__init__(title=f"Message #{channel.name}", timeout=600) # 10-minute timeout
+        super().__init__(title=f"Message #{channel.name}")
         self.channel = channel
 
     message = discord.ui.TextInput(
@@ -26,11 +26,6 @@ class MessageModal(discord.ui.Modal):
         await self.channel.send(self.message.value)
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Message sent successfully in {self.channel.mention}!",
-            ephemeral=True
-        )
-    async def on_timeout(self, interaction: discord.Interaction) -> None: # Intentional timeout to avoid errors
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} Modal timed out. Please try again.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
