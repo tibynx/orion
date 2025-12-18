@@ -1,10 +1,10 @@
 import logging
 import traceback
 import os
+from dotenv import load_dotenv
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config import TOKEN, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
@@ -12,8 +12,6 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Optimize code, check for better solutions
 # TODO: Add a proper README.md and requirements.txt
 # TODO: Make a setup.py for easy installation
-# TODO: Migrate using 'config.py' for constants like EMBED_COLOR and EMOJIS to use .env variables
-# TODO: Move loading secrets from 'config.py' to 'main.py'
 # TODO: Make a Dockerfile for easy deployment
 # TODO: Create a GitHub Workflow to check code with pylint on each push
 # TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
@@ -22,6 +20,10 @@ from config import TOKEN, ERROR_EMOJI
 
 # TODO: Make command to react to messages as the bot (optionally in specific channels)
 
+
+# Load environment variables
+load_dotenv()
+from config import ERROR_EMOJI
 
 # Set intents
 intents = discord.Intents.default()
@@ -156,4 +158,8 @@ class DiscordBot(commands.Bot):
 
 # Run the bot
 bot = DiscordBot()
+
+TOKEN = os.getenv('BOT_TOKEN')
+if not TOKEN:
+    raise ValueError("BOT_TOKEN not found in environment variables")
 bot.run(TOKEN)
