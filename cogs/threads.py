@@ -110,17 +110,19 @@ class Threads(commands.Cog):
     async def thread_create_callback(self, interaction: discord.Interaction, message: discord.Message) -> None:
         # Check if the channel type supports threads
         if not isinstance(message.channel, (discord.TextChannel, discord.ForumChannel)):
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 f"{ERROR_EMOJI} Threads can only be created in text channels or forums.",
                 ephemeral=True
             )
+            return
         # Check if the message already has a thread
         elif message.thread:
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 f"{ERROR_EMOJI} This message already has a thread.",
                 ephemeral=True
             )
-        return await interaction.response.send_modal(CreateThreadModal(message))
+            return
+        await interaction.response.send_modal(CreateThreadModal(message))
 
 
     # Close thread

@@ -84,10 +84,11 @@ class Presence(commands.Cog):
     )
     async def activity_streaming(self, interaction: discord.Interaction, title: str, url: str, description: str = None):
         if not url or not url.startswith("https://"): # Check for valid URL, only https is supported
-            return await interaction.response.send_message(
+            await interaction.response.send_message(
                 f"{ERROR_EMOJI} You must provide a valid URL for the stream. Example: `https://www.twitch.tv/your_channel`",
                 ephemeral=True
             )
+            return
         self.current_activity = discord.Activity(type=discord.ActivityType.streaming, name=title, url=url, state=description)
         await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
         await interaction.response.send_message(
