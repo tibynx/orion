@@ -63,6 +63,45 @@ class Threads(commands.Cog):
         )
         self.bot.tree.add_command(self.thread_command)
 
+    # Helper to resolve a thread from the current context or a provided ID
+    async def _get_thread(self, interaction: discord.Interaction, thread_id: str | None = None) -> discord.Thread | None:
+        # Get a thread from the current channel or by its ID.
+        # If used inside a thread, return it directly
+        if isinstance(interaction.channel, discord.Thread):
+            return interaction.channel
+
+        # If not inside a thread and no ID provided
+        if not thread_id:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
+                ephemeral=True
+            )
+            return None
+
+        # Try to fetch by ID and ensure it's a thread
+        try:
+            channel = await self.bot.fetch_channel(int(thread_id))
+        except ValueError:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The provided thread ID is invalid.",
+                ephemeral=True
+            )
+            return None
+        except discord.NotFound:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The specified thread cannot be found!",
+                ephemeral=True
+            )
+            return None
+
+        if not isinstance(channel, discord.Thread):
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The specified ID is not a thread.",
+                ephemeral=True
+            )
+            return None
+        return channel
+
 
 
     # Callback for the 'new thread' command in a context menu
@@ -95,23 +134,9 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to close (optional if used inside a thread)"
     )
     async def thread_close(self, interaction: discord.Interaction, thread_id: str = None) -> None:
-        # Check if we're in a thread
-        if isinstance(interaction.channel, discord.Thread):
-            thread = interaction.channel
-        # If not in a thread, require thread_id
-        elif thread_id:
-            try:
-                thread = await self.bot.fetch_channel(int(thread_id))
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} The specified thread cannot be found!",
-                    ephemeral=True
-                )
-        else:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
-                ephemeral=True
-            )
+        thread = await self._get_thread(interaction, thread_id)
+        if thread is None:
+            return
         try:
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been closed.",
@@ -142,23 +167,9 @@ class Threads(commands.Cog):
         name="The new name of the thread"
     )
     async def thread_rename(self, interaction: discord.Interaction, name: str, thread_id: str = None) -> None:
-        # Check if we're in a thread
-        if isinstance(interaction.channel, discord.Thread):
-            thread = interaction.channel
-        # If not in a thread, require thread_id
-        elif thread_id:
-            try:
-                thread = await self.bot.fetch_channel(int(thread_id))
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} The specified thread cannot be found!",
-                    ephemeral=True
-                )
-        else:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
-                ephemeral=True
-            )
+        thread = await self._get_thread(interaction, thread_id)
+        if thread is None:
+            return
         try:
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been renamed to: **{name}**",
@@ -203,23 +214,9 @@ class Threads(commands.Cog):
         duration="The duration to set the slowmode to"
     )
     async def thread_slowmode(self, interaction: discord.Interaction, duration: discord.app_commands.Choice[int], thread_id: str = None) -> None:
-        # Check if we're in a thread
-        if isinstance(interaction.channel, discord.Thread):
-            thread = interaction.channel
-        # If not in a thread, require thread_id
-        elif thread_id:
-            try:
-                thread = await self.bot.fetch_channel(int(thread_id))
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} The specified thread cannot be found!",
-                    ephemeral=True
-                )
-        else:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
-                ephemeral=True
-            )
+        thread = await self._get_thread(interaction, thread_id)
+        if thread is None:
+            return
         try:
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread slowmode set to: **{duration.name}**",
@@ -249,23 +246,9 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to lock (optional if used inside a thread)"
     )
     async def thread_lock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
-        # Check if we're in a thread
-        if isinstance(interaction.channel, discord.Thread):
-            thread = interaction.channel
-        # If not in a thread, require thread_id
-        elif thread_id:
-            try:
-                thread = await self.bot.fetch_channel(int(thread_id))
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} The specified thread cannot be found!",
-                    ephemeral=True
-                )
-        else:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
-                ephemeral=True
-            )
+        thread = await self._get_thread(interaction, thread_id)
+        if thread is None:
+            return
         try:
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been locked.",
@@ -295,23 +278,9 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to unlock (optional if used inside a thread)"
     )
     async def thread_unlock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
-        # Check if we're in a thread
-        if isinstance(interaction.channel, discord.Thread):
-            thread = interaction.channel
-        # If not in a thread, require thread_id
-        elif thread_id:
-            try:
-                thread = await self.bot.fetch_channel(int(thread_id))
-            except discord.NotFound:
-                return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} The specified thread cannot be found!",
-                    ephemeral=True
-                )
-        else:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
-                ephemeral=True
-            )
+        thread = await self._get_thread(interaction, thread_id)
+        if thread is None:
+            return
         try:
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been unlocked.",
