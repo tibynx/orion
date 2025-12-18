@@ -18,8 +18,6 @@ from discord.ext import commands
 # TODO: Make poetry config
 # TODO: Make IDEA run configurations for PyCharm
 
-# TODO: Make command to react to messages as the bot (optionally in specific channels)
-
 
 # Load environment variables
 load_dotenv()
@@ -72,7 +70,7 @@ class DiscordBot(commands.Bot):
 
         # Sync interactions
         try:
-            synced = await bot.tree.sync() # Sync all commands globally
+            synced = await self.tree.sync() # Sync all commands globally
             self.logger.info(f"Synced {len(synced)} interactions globally")
         except Exception as e:
             exception = f"{type(e).__name__}: {e}"
