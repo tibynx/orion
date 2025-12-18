@@ -19,7 +19,7 @@ class WebhookSendModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder=f"Enter the message to send",
+        placeholder="Enter the message to send.",
         required=True,
         max_length=2000,
     )
@@ -27,7 +27,7 @@ class WebhookSendModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await self.webhook.send(content=self.message.value)
         await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Message sent successfully!",
+            f"{SUCCESS_EMOJI} Message sent successfully.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
@@ -43,7 +43,7 @@ class WebookDeleteDialog(discord.ui.LayoutView):
         super().__init__()
         self.webhook = webhook
 
-        container = discord.ui.Container(discord.ui.TextDisplay(f"## Delete {webhook.name}\nAre you sure you want to delete **{webhook.name}** webhook? This action cannot be undone."))
+        container = discord.ui.Container(discord.ui.TextDisplay(f"## Delete {webhook.name}\nAre you sure you want to delete the **{webhook.name}** webhook? This action cannot be undone."))
         cancel_button = discord.ui.Button(style=discord.ButtonStyle.secondary, label="Cancel") # Cancel button
         delete_button = discord.ui.Button(style=discord.ButtonStyle.danger, label="Delete") # Delete button
         cancel_button.callback = self.cancel_button_callback
@@ -64,19 +64,19 @@ class WebookDeleteDialog(discord.ui.LayoutView):
             await self.webhook.delete()
             await interaction.delete_original_response()
             await interaction.followup.send(
-                f"{SUCCESS_EMOJI} Deleted **{self.webhook.name}** webhook successfully!",
+                f"{SUCCESS_EMOJI} Deleted **{self.webhook.name}** webhook successfully.",
                 ephemeral=True
             )
         except discord.NotFound:
             await interaction.delete_original_response()
             await interaction.followup.send(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
         except discord.Forbidden:
             await interaction.delete_original_response()
             await interaction.followup.send(
-                f"{ERROR_EMOJI} I do not have permission to delete this webhook!",
+                f"{ERROR_EMOJI} I don't have permission to delete this webhook.",
                 ephemeral=True
             )
 
@@ -94,7 +94,7 @@ class WebhookButtons(discord.ui.View):
         # Prevent sending messages to forum channels
         if isinstance(self.webhook.channel, discord.ForumChannel):
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
+                f"{ERROR_EMOJI} You cannot send messages to forum webhooks.",
                 ephemeral=True
             )
             return
@@ -135,7 +135,7 @@ class Webhook(commands.Cog):
     # Group for editing webhooks
     webhook_edit_group = app_commands.Group(
         name="webhookedit",
-        description="Edit webhook details",
+        description="Edit webhook details.",
         default_permissions=discord.Permissions(manage_webhooks=True), # Requires manage webhooks permission
         guild_only=True
     )
@@ -145,7 +145,7 @@ class Webhook(commands.Cog):
     # Get details about a webhook
     @app_commands.command(
         name="webhookget",
-        description="Get details about a webhook"
+        description="Get details about a webhook."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
@@ -172,13 +172,13 @@ class Webhook(commands.Cog):
                 return await interaction.response.send_message(embed=embed, view=WebhookDeleteButton(webhook), ephemeral=True)
             return await interaction.response.send_message(embed=embed, view=WebhookButtons(webhook), ephemeral=True)
         except discord.NotFound:
-            return await interaction.response.send_message(f"{ERROR_EMOJI} The specified webhook cannot be found!", ephemeral=True)
+            return await interaction.response.send_message(f"{ERROR_EMOJI} The specified webhook cannot be found.", ephemeral=True)
 
 
     # List all webhooks
     @app_commands.command(
         name="webhooklist",
-        description="List all webhooks in the current server"
+        description="List all webhooks in the current server."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
@@ -187,7 +187,7 @@ class Webhook(commands.Cog):
         # Check if there are no webhooks
         if not webhooks:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} No webhooks found in this server!",
+                f"{ERROR_EMOJI} No webhooks found in this server.",
                 ephemeral=True
             )
         embed = discord.Embed(title=f"Webhooks in {interaction.guild.name}", color=None)
@@ -204,7 +204,7 @@ class Webhook(commands.Cog):
     # Create a webhook
     @app_commands.command(
         name="webhookcreate",
-        description="Create a webhook. The webhook will be associated with this bot!"
+        description="Create a webhook. The webhook will be associated with this bot."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True) # Requires manage webhooks permission
@@ -228,14 +228,14 @@ class Webhook(commands.Cog):
         embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
         embed.set_thumbnail(url=webhook.display_avatar.url)
         # We don't check if the webhook user is a bot, because it always will be
-        embed.set_footer(text=f"🛈  Use the /webhookedit commands to edit this webhook's details.")
-        await interaction.response.send_message(f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook!", embed=embed, view=WebhookButtons(webhook), ephemeral=True)
+        embed.set_footer(text="🛈  Use the /webhookedit commands to edit this webhook's details.")
+        await interaction.response.send_message(f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.", embed=embed, view=WebhookButtons(webhook), ephemeral=True)
 
 
     # Delete a webhook (sends confirmation modal)
     @app_commands.command(
         name="webhookdelete",
-        description="Delete a webhook"
+        description="Delete a webhook."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True)
@@ -247,7 +247,7 @@ class Webhook(commands.Cog):
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
             return
@@ -257,7 +257,7 @@ class Webhook(commands.Cog):
     # Send a message through a webhook using its ID (opens modal)
     @app_commands.command(
         name="webhookmsg",
-        description="Send a message through a webhook"
+        description="Send a message through a webhook."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_webhooks=True)
@@ -269,19 +269,19 @@ class Webhook(commands.Cog):
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.NotFound:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
         # Prevent sending messages to forum channels
         if isinstance(webhook.channel, discord.ForumChannel):
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You cannot send messages to forum webhooks!",
+                f"{ERROR_EMOJI} You cannot send messages to forum webhooks.",
                 ephemeral=True
             )
         # Check if it's a channel follower or application webhook
         if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You cannot send messages with this webhook!",
+                f"{ERROR_EMOJI} You cannot send messages with this webhook.",
                 ephemeral=True
             )
         await interaction.response.send_modal(WebhookSendModal(self.bot, webhook)) # Send the webhook message modal
@@ -290,11 +290,11 @@ class Webhook(commands.Cog):
     # Change the name of a webhook
     @webhook_edit_group.command(
         name="name",
-        description="Edit the name of a webhook"
+        description="Edit the name of a webhook."
     )
     @app_commands.describe(
-        webhook_id="The ID of the webhook",
-        name="The new name of the webhook"
+        webhook_id="The ID of the webhook.",
+        name="The new name of the webhook."
     )
     async def webhook_edit_name(self, interaction: discord.Interaction, webhook_id: str, name: str) -> None:
         try:
@@ -302,18 +302,18 @@ class Webhook(commands.Cog):
             # Check if it's a channel follower or application webhook
             if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
                 return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} You cannot rename this webhook!",
+                    f"{ERROR_EMOJI} You cannot rename this webhook.",
                     ephemeral=True
                 )
             old_name = webhook.name
             await webhook.edit(name=name)
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} **{old_name}** webhook's name has been changed to **{webhook.name}** successfully!",
+                f"{SUCCESS_EMOJI} Webhook **{old_name}** renamed to **{webhook.name}** successfully.",
                 ephemeral=True
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
 
@@ -321,16 +321,16 @@ class Webhook(commands.Cog):
     # Change the avatar of a webhook
     @webhook_edit_group.command(
         name="avatar",
-        description="Edit the avatar of a webhook"
+        description="Edit the avatar of a webhook."
     )
     @app_commands.describe(
-        webhook_id="The ID of the webhook",
-        avatar="The new avatar of the webhook"
+        webhook_id="The ID of the webhook.",
+        avatar="The new avatar of the webhook."
     )
     async def webhook_edit_avatar(self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment) -> None:
         if not avatar.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Only .png, .jpg, .jpeg, and .gif files are supported!",
+                f"{ERROR_EMOJI} Only .png, .jpg, .jpeg, and .gif files are supported.",
                 ephemeral=True
             )
         try:
@@ -338,17 +338,17 @@ class Webhook(commands.Cog):
             # Check if it's a channel follower or application webhook
             if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
                 return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} You cannot change the avatar for this webhook!",
+                    f"{ERROR_EMOJI} You cannot change the avatar for this webhook.",
                     ephemeral=True
                 )
             await webhook.edit(avatar=await avatar.read())
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} **{webhook.name}** webhook's avatar changed successfully!",
+                f"{SUCCESS_EMOJI} Webhook **{webhook.name}** avatar changed successfully.",
                 ephemeral=True
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
 
@@ -356,11 +356,11 @@ class Webhook(commands.Cog):
     # Change the channel of a webhook
     @webhook_edit_group.command(
         name="channel",
-        description="Edit the channel of a webhook"
+        description="Edit the channel of a webhook."
     )
     @app_commands.describe(
-        webhook_id="The ID of the webhook",
-        channel="The new channel of the webhook"
+        webhook_id="The ID of the webhook.",
+        channel="The new channel of the webhook."
     )
     async def webhook_edit_channel(
         self, interaction: discord.Interaction, webhook_id: str,
@@ -371,17 +371,17 @@ class Webhook(commands.Cog):
             # Check if it's a channel follower or application webhook
             if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
                 return await interaction.response.send_message(
-                    f"{ERROR_EMOJI} You cannot change the channel for this webhook!",
+                    f"{ERROR_EMOJI} You cannot change the channel for this webhook.",
                     ephemeral=True
                 )
             await webhook.edit(channel=channel)
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} **{webhook.channel}** webhook's channel updated successfully!",
+                f"{SUCCESS_EMOJI} Webhook **{webhook.name}** channel updated successfully.",
                 ephemeral=True
             )
         except discord.NotFound:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} The specified webhook cannot be found!",
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
 

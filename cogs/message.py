@@ -17,7 +17,7 @@ class MessageModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send",
+        placeholder="Enter the message to send.",
         max_length=2000, # Discord's message character limit
         required=True,
     )
@@ -25,7 +25,7 @@ class MessageModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         await self.channel.send(self.message.value)
         await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Message sent successfully in {self.channel.mention}!",
+            f"{SUCCESS_EMOJI} Message sent successfully in {self.channel.mention}.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
@@ -44,7 +44,7 @@ class DmModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send",
+        placeholder="Enter the message to send.",
         max_length=2000, # Discord's message character limit
         required=True,
     )
@@ -52,13 +52,13 @@ class DmModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         await self.user.send(self.message.value)
         await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}!",
+            f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.Forbidden):
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Cannot send direct message to {self.user.mention}. They might have DMs disabled.",
+                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. They might have DMs disabled.",
                 ephemeral=True
             )
         else:
@@ -77,7 +77,7 @@ class ReplyModal(discord.ui.Modal):
     reply_message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send",
+        placeholder="Enter the message to send.",
         max_length=2000, # Discord's message character limit
         required=True,
     )
@@ -85,7 +85,7 @@ class ReplyModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         await self.message.reply(self.reply_message.value)
         await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Reply sent to {self.message.author.mention} successfully!",
+            f"{SUCCESS_EMOJI} Reply sent successfully to {self.message.author.mention}.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
@@ -118,7 +118,7 @@ class Message(commands.Cog):
     # Send a message in a specified channel
     @app_commands.command(
         name="msg",
-        description="Send a message."
+        description="Send a message in a channel."
     )
     @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
     @app_commands.guild_only()
@@ -146,7 +146,7 @@ class Message(commands.Cog):
     async def send_dm_modal(self, interaction: discord.Interaction, user: discord.User):
         if user == self.bot.user:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I cannot send a direct message to myself!",
+                f"{ERROR_EMOJI} I cannot send a DM to myself.",
                 ephemeral=True
             )
             return
@@ -166,7 +166,7 @@ class Message(commands.Cog):
     async def dm_command_callback(self, interaction: discord.Interaction, user: discord.User):
         if user == self.bot.user:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I cannot send a direct message to myself!",
+                f"{ERROR_EMOJI} I cannot send a DM to myself.",
                 ephemeral=True
             )
             return

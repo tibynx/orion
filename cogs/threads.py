@@ -4,18 +4,17 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Fix grammar
 # TODO: Do pylint, and fix code
 
 
 # Create a modal for creating a new thread
-class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
+class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
     def __init__(self, message: discord.Message):
         super().__init__()
         self.message = message
 
     name = discord.ui.TextInput(
-        label="Thread name",
+        label="Thread Name",
         placeholder="New Thread",
         required=True,
         max_length=200, # Character limit for thread names
@@ -23,7 +22,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
     first_message = discord.ui.TextInput(  # Renamed from 'message' to 'first_message'
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the first message of the thread",
+        placeholder="Enter the first message of the thread.",
         required=True,
         max_length=2000, # Discord's message character limit
     )
@@ -37,13 +36,13 @@ class CreateThreadModal(discord.ui.Modal, title="Create new thread"):
         # Send the first message in the thread
         await thread.send(content=self.first_message.value)
         await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Thread created successfully!",
+            f"{SUCCESS_EMOJI} Thread created successfully.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.Forbidden):
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} I don't have permission to create threads in this channel!",
+                f"{ERROR_EMOJI} I don't have permission to create threads in this channel.",
                 ephemeral=True
             )
         else:
@@ -73,13 +72,13 @@ class Threads(commands.Cog):
         # Check if the channel type supports threads
         if not isinstance(message.channel, (discord.TextChannel, discord.ForumChannel)):
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Threads can only be created in text channels or forums!",
+                f"{ERROR_EMOJI} Threads can only be created in text channels or forums.",
                 ephemeral=True
             )
         # Check if the message already has a thread
         elif message.thread:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} This message already has a thread!",
+                f"{ERROR_EMOJI} This message already has a thread.",
                 ephemeral=True
             )
         return await interaction.response.send_modal(CreateThreadModal(message))
@@ -88,7 +87,7 @@ class Threads(commands.Cog):
     # Close thread
     @app_commands.command(
         name="threadclose",
-        description="Close a thread. If used in a thread, closes the current thread.",
+        description="Close a thread. If used in a thread, closes the current thread."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_threads=True)
@@ -110,7 +109,7 @@ class Threads(commands.Cog):
                 )
         else:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread!",
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
                 ephemeral=True
             )
         try:
@@ -121,7 +120,7 @@ class Threads(commands.Cog):
             await thread.edit(archived=True)
         except discord.Forbidden:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to close this thread!",
+                f"{ERROR_EMOJI} I don't have permission to close this thread.",
                 ephemeral=True
             )
         except discord.HTTPException as e:
@@ -157,7 +156,7 @@ class Threads(commands.Cog):
                 )
         else:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread!",
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
                 ephemeral=True
             )
         try:
@@ -168,7 +167,7 @@ class Threads(commands.Cog):
             await thread.edit(name=name)
         except discord.Forbidden:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to rename this thread!",
+                f"{ERROR_EMOJI} I don't have permission to rename this thread.",
                 ephemeral=True
             )
         except discord.HTTPException as e:
@@ -218,18 +217,18 @@ class Threads(commands.Cog):
                 )
         else:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread!",
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
                 ephemeral=True
             )
         try:
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Set slowmode for thread to: `{duration.name}`",
+                f"{SUCCESS_EMOJI} Thread slowmode set to: **{duration.name}**",
                 ephemeral=True
             )
             await thread.edit(slowmode_delay=duration.value)
         except discord.Forbidden:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to set slowmode for this thread!",
+                f"{ERROR_EMOJI} I don't have permission to set slowmode for this thread.",
                 ephemeral=True
             )
         except discord.HTTPException as e:
@@ -264,18 +263,18 @@ class Threads(commands.Cog):
                 )
         else:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread!",
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
                 ephemeral=True
             )
         try:
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Locked thread!",
+                f"{SUCCESS_EMOJI} Thread has been locked.",
                 ephemeral=True
             )
             await thread.edit(locked=True)
         except discord.Forbidden:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to lock this thread!",
+                f"{ERROR_EMOJI} I don't have permission to lock this thread.",
                 ephemeral=True
             )
         except discord.HTTPException as e:
@@ -288,7 +287,7 @@ class Threads(commands.Cog):
     # Unlock thread
     @app_commands.command(
         name="threadunlock",
-        description="Unlock a thread. If used in a thread, locks the current thread."
+        description="Unlock a thread. If used in a thread, unlocks the current thread."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_threads=True)
@@ -310,18 +309,18 @@ class Threads(commands.Cog):
                 )
         else:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread!",
+                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
                 ephemeral=True
             )
         try:
             await interaction.response.send_message(
-                f"{SUCCESS_EMOJI} Unlocked thread!",
+                f"{SUCCESS_EMOJI} Thread has been unlocked.",
                 ephemeral=True
             )
-            await thread.edit(locked=True)
+            await thread.edit(locked=False)
         except discord.Forbidden:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to unlock this thread!",
+                f"{ERROR_EMOJI} I don't have permission to unlock this thread.",
                 ephemeral=True
             )
         except discord.HTTPException as e:

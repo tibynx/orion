@@ -17,13 +17,13 @@ class Moderation(commands.Cog):
     # Purge messages
     @app_commands.command(
         name="purge",
-        description="Purge a number of messages from the current channel.",
+        description="Purge a number of messages from a channel."
     )
     @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
     @app_commands.guild_only()
     @app_commands.describe(
         number="The number of messages to purge.",
-        channel="The channel to purge messages from. Defaults to the current channel.",
+        channel="The channel to purge messages from. Defaults to the current channel."
     )
     async def purge_messages(
             self,
@@ -42,7 +42,7 @@ class Moderation(commands.Cog):
             )
         except discord.HTTPException:
             await interaction.followup.send(
-                f"{ERROR_EMOJI} I don't have permissions to purge messages.",
+                f"{ERROR_EMOJI} I don't have permission to purge messages.",
                 ephemeral=True
             )
 
@@ -50,7 +50,7 @@ class Moderation(commands.Cog):
     # Delete only pinned messages
     @app_commands.command(
         name="purgepins",
-        description="Purge all pinned messages from the current channel.",
+        description="Purge all pinned messages from a channel."
     )
     @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
     @app_commands.guild_only()
@@ -72,7 +72,7 @@ class Moderation(commands.Cog):
             )
         except discord.HTTPException:
             await interaction.followup.send(
-                f"{ERROR_EMOJI} I don't have permissions to purge messages.",
+                f"{ERROR_EMOJI} I don't have permission to purge messages.",
                 ephemeral=True
             )
 

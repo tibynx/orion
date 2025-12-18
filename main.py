@@ -10,7 +10,7 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Do pylint, and fix code
 # TODO: Remove unused/unnecessary code
 # TODO: Optimize code, check for better solutions
-# TODO: Add a proper README.md, .gitignore, and requirements.txt
+# TODO: Add a proper README.md and requirements.txt
 # TODO: Make a setup.py for easy installation
 # TODO: Migrate using 'config.py' for constants like EMBED_COLOR and EMOJIS to use .env variables
 # TODO: Move loading secrets from 'config.py' to 'main.py'
@@ -21,8 +21,6 @@ from config import TOKEN, ERROR_EMOJI
 # TODO: Make IDEA run configurations for PyCharm
 
 # TODO: Make command to react to messages as the bot (optionally in specific channels)
-# TODO: Make command to purge messages
-# TODO: Make command to delete pinned messages in a channel
 
 
 # Set intents
@@ -122,21 +120,21 @@ class DiscordBot(commands.Bot):
         # User doesn't have permission to execute the command
         if isinstance(error, app_commands.MissingPermissions) or isinstance(error, app_commands.errors.CheckFailure):
             await send_func(
-                f"{ERROR_EMOJI} You don't have permissions to execute this command!",
+                f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
             )
 
         # Bot doesn't have permission to execute the command
         elif isinstance(error, app_commands.BotMissingPermissions) or isinstance(error, discord.Forbidden):
             await send_func(
-                f"{ERROR_EMOJI} I don't have permissions to execute this command!",
+                f"{ERROR_EMOJI} I don't have permission to execute this command.",
                 ephemeral=True
             )
 
-        # Command doesn't exist'
+        # Command doesn't exist
         elif isinstance(error, app_commands.CommandNotFound): # Happens when a command is updated but the client hasn't refreshed
             await send_func(
-                f"{ERROR_EMOJI} Command not found. Refresh your client!",
+                f"{ERROR_EMOJI} Command not found. Please refresh your client.",
                 ephemeral=True
             )
 
