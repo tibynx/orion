@@ -132,6 +132,12 @@ class Webhook(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # Helper to classify read-only webhooks
+    @staticmethod
+    def _is_readonly_webhook(webhook: discord.Webhook) -> bool:
+        # Return True if a webhook type is a channel follower or application.
+        return webhook.type in (discord.WebhookType.channel_follower, discord.WebhookType.application)
+
     # Group for editing webhooks
     webhook_edit_group = app_commands.Group(
         name="webhookedit",
@@ -168,7 +174,7 @@ class Webhook(commands.Cog):
             if webhook.user.bot:
                 embed.set_footer(text=f"🛈  This webhook is managed by {webhook.user.name}#{webhook.user.discriminator}.")
             # Check if it's an application or channel follower webhook (we can only delete those)
-            elif webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
+            elif self._is_readonly_webhook(webhook):
                 return await interaction.response.send_message(embed=embed, view=WebhookDeleteButton(webhook), ephemeral=True)
             return await interaction.response.send_message(embed=embed, view=WebhookButtons(webhook), ephemeral=True)
         except discord.NotFound:
@@ -279,7 +285,7 @@ class Webhook(commands.Cog):
                 ephemeral=True
             )
         # Check if it's a channel follower or application webhook
-        if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
+        if self._is_readonly_webhook(webhook):
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages with this webhook.",
                 ephemeral=True
@@ -300,7 +306,7 @@ class Webhook(commands.Cog):
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
-            if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
+            if self._is_readonly_webhook(webhook):
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} You cannot rename this webhook.",
                     ephemeral=True
@@ -336,7 +342,7 @@ class Webhook(commands.Cog):
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
-            if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
+            if self._is_readonly_webhook(webhook):
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} You cannot change the avatar for this webhook.",
                     ephemeral=True
@@ -369,7 +375,7 @@ class Webhook(commands.Cog):
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
-            if webhook.type == discord.WebhookType.channel_follower or discord.WebhookType.application:
+            if self._is_readonly_webhook(webhook):
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} You cannot change the channel for this webhook.",
                     ephemeral=True
