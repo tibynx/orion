@@ -30,7 +30,8 @@ class MessageModal(discord.ui.Modal):
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the message: `{str(error).capitalize()}`",
+            f"{ERROR_EMOJI} An error occurred while sending the message:"
+            + f" `{str(error).capitalize()}`",
             ephemeral=True
         )
 
@@ -58,12 +59,14 @@ class DmModal(discord.ui.Modal):
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.Forbidden):
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. They might have DMs disabled.",
+                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}."
+                + " They might have DMs disabled.",
                 ephemeral=True
             )
         else:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while sending the direct message: `{str(error).capitalize()}`",
+                f"{ERROR_EMOJI} An error occurred while sending the direct message:"
+                + f" `{str(error).capitalize()}`",
                 ephemeral=True
             )
 
@@ -90,11 +93,13 @@ class ReplyModal(discord.ui.Modal):
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the reply: `{str(error).capitalize()}`",
+            f"{ERROR_EMOJI} An error occurred while sending the reply: "
+            f"`{str(error).capitalize()}`",
             ephemeral=True
         )
 
 
+# Message commands
 class Message(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -120,17 +125,21 @@ class Message(commands.Cog):
         name="msg",
         description="Send a message in a channel."
     )
-    @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
+    # Requires manage messages permission
+    @app_commands.default_permissions(manage_messages=True)
     @app_commands.guild_only()
     @app_commands.describe(
         channel="The channel to send the message in."
     )
     async def send_message_modal(
-        self,
-        interaction: discord.Interaction,
-        channel: Union[discord.TextChannel, discord.Thread, discord.StageChannel, discord.VoiceChannel],
+        self, interaction: discord.Interaction,
+        channel: Union[
+            discord.TextChannel, discord.Thread,
+            discord.StageChannel, discord.VoiceChannel
+        ],
     ):
-        await interaction.response.send_modal(MessageModal(channel)) # Send the message modal
+        # Send the message modal
+        await interaction.response.send_modal(MessageModal(channel))
 
 
     # Send a direct message to a user
@@ -138,31 +147,40 @@ class Message(commands.Cog):
         name="dm",
         description="Send a direct message to a user."
     )
-    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
+    # Requires manage guild permission
+    @app_commands.default_permissions(manage_guild=True)
     @app_commands.guild_only()
     @app_commands.describe(
         user="The user to send the direct message to."
     )
-    async def send_dm_modal(self, interaction: discord.Interaction, user: discord.User):
+    async def send_dm_modal(
+            self, interaction: discord.Interaction, user: discord.User
+    ):
         if user == self.bot.user:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a DM to myself.",
                 ephemeral=True
             )
             return
-        await interaction.response.send_modal(DmModal(user)) # Send the DM modal
+        # Send the DM modal
+        await interaction.response.send_modal(DmModal(user))
 
 
     # Callback for the reply context menu command
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
-    async def reply_command_callback(self, interaction: discord.Interaction, message: discord.Message):
-        await interaction.response.send_modal(ReplyModal(message)) # Send the reply modal
+    # Requires manage guild permission
+    @app_commands.default_permissions(manage_guild=True)
+    async def reply_command_callback(
+            self, interaction: discord.Interaction, message: discord.Message
+    ):
+        # Send the reply modal
+        await interaction.response.send_modal(ReplyModal(message))
 
 
     # Callback for the send DM user command
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_guild=True) # Requires manage guild permission
+    # Requires manage guild permission
+    @app_commands.default_permissions(manage_guild=True)
     async def dm_command_callback(self, interaction: discord.Interaction, user: discord.User):
         if user == self.bot.user:
             await interaction.response.send_message(
@@ -170,7 +188,8 @@ class Message(commands.Cog):
                 ephemeral=True
             )
             return
-        await interaction.response.send_modal(DmModal(user)) # Send the DM modal
+        # Send the DM modal
+        await interaction.response.send_modal(DmModal(user))
 
 
 

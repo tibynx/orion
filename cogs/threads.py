@@ -47,11 +47,13 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
             )
         else:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while creating the thread: `{str(error).capitalize()}`",
+                f"{ERROR_EMOJI} An error occurred while creating the thread: "
+                f"`{str(error).capitalize()}`",
                 ephemeral=True
             )
 
 
+# Thread management commands
 class Threads(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -64,7 +66,9 @@ class Threads(commands.Cog):
         self.bot.tree.add_command(self.thread_command)
 
     # Helper to resolve a thread from the current context or a provided ID
-    async def _get_thread(self, interaction: discord.Interaction, thread_id: str | None = None) -> discord.Thread | None:
+    async def _get_thread(
+            self, interaction: discord.Interaction, thread_id: str | None = None
+    ) -> discord.Thread | None:
         # Get a thread from the current channel or by its ID.
         # If used inside a thread, return it directly
         if isinstance(interaction.channel, discord.Thread):
@@ -73,7 +77,8 @@ class Threads(commands.Cog):
         # If not inside a thread and no ID provided
         if not thread_id:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Please provide a thread ID when using this command outside of a thread.",
+                f"{ERROR_EMOJI} Please provide a thread ID when "
+                "using this command outside of a thread.",
                 ephemeral=True
             )
             return None
@@ -107,7 +112,9 @@ class Threads(commands.Cog):
     # Callback for the 'new thread' command in a context menu
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_threads=True)
-    async def thread_create_callback(self, interaction: discord.Interaction, message: discord.Message) -> None:
+    async def thread_create_callback(
+            self, interaction: discord.Interaction, message: discord.Message
+    ) -> None:
         # Check if the channel type supports threads
         if not isinstance(message.channel, (discord.TextChannel, discord.ForumChannel)):
             await interaction.response.send_message(
@@ -168,7 +175,9 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to rename (optional if used inside a thread)",
         name="The new name of the thread"
     )
-    async def thread_rename(self, interaction: discord.Interaction, name: str, thread_id: str = None) -> None:
+    async def thread_rename(
+            self, interaction: discord.Interaction, name: str, thread_id: str = None
+    ) -> None:
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -193,7 +202,8 @@ class Threads(commands.Cog):
     # Set slowmode for thread
     @app_commands.command(
         name="threadslowmode",
-        description="Set the slowmode for a thread. If used in a thread, sets the slowmode for the current thread."
+        description="Set the slowmode for a thread. "
+                    "If used in a thread, sets the slowmode for the current thread."
     )
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_threads=True)
@@ -215,7 +225,10 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to set slowmode for (optional if used inside a thread)",
         duration="The duration to set the slowmode to"
     )
-    async def thread_slowmode(self, interaction: discord.Interaction, duration: discord.app_commands.Choice[int], thread_id: str = None) -> None:
+    async def thread_slowmode(
+            self, interaction: discord.Interaction,
+            duration: discord.app_commands.Choice[int], thread_id: str = None
+    ) -> None:
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return

@@ -8,6 +8,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 # TODO: Do pylint, and fix code
 
 
+# Moderation commands
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -19,7 +20,8 @@ class Moderation(commands.Cog):
         name="purge",
         description="Purge a number of messages from a channel."
     )
-    @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
+    # Requires manage messages permission
+    @app_commands.default_permissions(manage_messages=True)
     @app_commands.guild_only()
     @app_commands.describe(
         number="The number of messages to purge.",
@@ -29,7 +31,10 @@ class Moderation(commands.Cog):
             self,
             interaction: discord.Interaction,
             number: app_commands.Range[int, 1, 1000],
-            channel: Union[discord.TextChannel, discord.ForumChannel, discord.VoiceChannel, discord.StageChannel] = None
+            channel: Union[
+                discord.TextChannel, discord.ForumChannel,
+                discord.VoiceChannel, discord.StageChannel
+            ] = None
     ):
         await interaction.response.defer(ephemeral=True)  # Defer response
         try:
@@ -52,12 +57,16 @@ class Moderation(commands.Cog):
         name="purgepins",
         description="Purge all pinned messages from a channel."
     )
-    @app_commands.default_permissions(manage_messages=True) # Requires manage messages permission
+    # Requires manage messages permission
+    @app_commands.default_permissions(manage_messages=True)
     @app_commands.guild_only()
     async def purge_pinned_messages(
             self,
             interaction: discord.Interaction,
-            channel: Union[discord.TextChannel, discord.ForumChannel, discord.VoiceChannel, discord.StageChannel] = None
+            channel: Union[
+                discord.TextChannel, discord.ForumChannel,
+                discord.VoiceChannel, discord.StageChannel
+            ] = None
     ):
         try:
             if channel is None:
