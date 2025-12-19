@@ -123,7 +123,7 @@ class Threads(commands.Cog):
             )
             return
         # Check if the message already has a thread
-        elif message.thread:
+        if message.thread:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} This message already has a thread.",
                 ephemeral=True
