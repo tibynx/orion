@@ -54,42 +54,40 @@ class DiscordBot(commands.Bot):
                 extension = file[:-3]
                 try:
                     await self.load_extension(f"cogs.{extension}")
-                    self.logger.info(f"Loaded extension '{extension}'")
+                    self.logger.info("Loaded extension '%s'", extension)
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
-                    self.logger.error(f"Failed to load extension '{extension}'\n{exception}")
+                    self.logger.error("Failed to load extension '%s'\n%s", extension, exception)
 
 
     async def setup_hook(self) -> None:
         self.logger.info(
-            f"Logged in as {self.user.name}#{self.user.discriminator}"
-            f" (ID: {self.user.id})"
+            "Logged in as %s#%s (ID: %s)", self.user.name, self.user.discriminator, self.user.id
         )
-        self.logger.info(f"discord.py version: {discord.__version__}")
+        self.logger.info("discord.py version: %s", discord.__version__)
         self.logger.info("-------------------")
         await self.load_cogs()
 
         # Sync interactions
         try:
             synced = await self.tree.sync() # Sync all commands globally
-            self.logger.info(f"Synced {len(synced)} interactions globally")
+            self.logger.info("Synced %d interactions globally", len(synced))
         except Exception as e:
-            exception = f"{type(e).__name__}: {e}"
-            self.logger.error(f"Failed to sync interaction: {exception}")
+            self.logger.error("Failed to sync interaction: %s: %s", type(e).__name__, e)
 
 
     # Log guild join
     async def on_guild_join(self, guild: discord.Guild) -> None:
         self.logger.info(
-            f"Joined guild '{guild.name}' (ID: {guild.id}) with {len(guild.members)} "
-            f"member(s), the guild owner is {guild.owner} (ID: {guild.owner.id})"
+            "Joined guild '%s' (ID: %s) with %d member(s), the guild owner is %s (ID: %s)",
+            guild.name, guild.id, len(guild.members), guild.owner, guild.owner.id
         )
 
     # Log guild leave
     async def on_guild_remove(self, guild: discord.Guild) -> None:
         self.logger.info(
-            f"Left guild '{guild.name}' (ID: {guild.id}) with {len(guild.members)} "
-            f"member(s), the guild owner is {guild.owner} (ID: {guild.owner.id})"
+            "Left guild '%s' (ID: %s) with %d member(s), the guild owner is %s (ID: %s)",
+            guild.name, guild.id, len(guild.members), guild.owner, guild.owner.id
         )
 
     # Log app command execution
@@ -98,25 +96,25 @@ class DiscordBot(commands.Bot):
     ) -> None:
         if interaction.guild is not None:
             self.logger.info(
-                f"User {interaction.user} (ID: {interaction.user.id}) executed "
-                f"the '{command.qualified_name}' interaction in "
-                f"guild '{interaction.guild.name}' (ID: {interaction.guild.id})"
+                "User %s (ID: %s) executed the '%s' interaction in guild '%s' (ID: %s)",
+                interaction.user, interaction.user.id, command.qualified_name,
+                interaction.guild.name, interaction.guild.id
             )
         else:
             self.logger.info(
-                f"User {interaction.user} (ID: {interaction.user.id}) executed "
-                f"the '{command.qualified_name}' interaction in DMs"
+                "User %s (ID: %s) executed the '%s' interaction in DMs",
+                interaction.user, interaction.user.id, command.qualified_name
             )
 
     # Log command errors
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
-        self.logger.error(f"An error occurred in {event_name}")
+        self.logger.error("An error occurred in %s", event_name)
         traceback.print_exc()
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.CommandNotFound):
             return  # Ignore command not found errors
-        self.logger.error(f"An unhandled command error occurred: {error}")
+        self.logger.error("An unhandled command error occurred: %s", error)
 
     async def on_app_command_error(
             self, interaction: discord.Interaction, error: app_commands.AppCommandError
@@ -164,7 +162,7 @@ class DiscordBot(commands.Bot):
 
         # Other errors
         else:
-            self.logger.error(f"Unhandled exception in command '{command_name}': {str(error)}")
+            self.logger.error("Unhandled exception in command '%s': %s", command_name, error)
             await send_func(
                 f"{ERROR_EMOJI} An unexpected error occurred while executing the command: "
                 f"`{str(error).capitalize()}`",
