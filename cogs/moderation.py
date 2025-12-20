@@ -68,10 +68,10 @@ class Moderation(commands.Cog):
                 discord.VoiceChannel, discord.StageChannel
             ] = None
     ):
+        await interaction.response.defer(ephemeral=True) # Defer response
         try:
             if channel is None:
                 channel = interaction.channel # Default to current channel
-            await interaction.response.defer(ephemeral=True) # Defer response
             pinned_messages = await channel.pins() # Get pinned messages
             for message in pinned_messages:
                 await message.delete()  # Delete each pinned message

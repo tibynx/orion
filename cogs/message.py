@@ -23,8 +23,9 @@ class MessageModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         await self.channel.send(self.message.value)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{SUCCESS_EMOJI} Message sent successfully in {self.channel.mention}.",
             ephemeral=True
         )
@@ -51,24 +52,41 @@ class DmModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        # Defer the response to avoid interaction timeout while sending the DM
+        await interaction.response.defer(ephemeral=True)
         await self.user.send(self.message.value)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        # Use followup if the interaction response has already been used/deferred
         if isinstance(error, discord.Forbidden):
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}."
-                + " They might have DMs disabled.",
-                ephemeral=True
-            )
+            if interaction.response.is_done():
+                await interaction.followup.send(
+                    f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
+                    "They might have DMs disabled.",
+                    ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
+                    "They might have DMs disabled.",
+                    ephemeral=True
+                )
         else:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while sending the direct message:"
-                + f" `{str(error)}`",
-                ephemeral=True
-            )
+            if interaction.response.is_done():
+                await interaction.followup.send(
+                    f"{ERROR_EMOJI} An error occurred while sending the direct message: "
+                    f"`{str(error)}`",
+                    ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} An error occurred while sending the direct message: "
+                    f"`{str(error)}`",
+                    ephemeral=True
+                )
 
 
 # Modal for replying to a message
