@@ -38,7 +38,7 @@ class WebhookSendModal(discord.ui.Modal):
 
 
 # Webhook deletion dialog
-class WebookDeleteDialog(discord.ui.LayoutView):
+class WebhookDeleteDialog(discord.ui.LayoutView):
     def __init__(self, webhook: discord.Webhook):
         super().__init__()
         self.webhook = webhook
