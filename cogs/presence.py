@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -6,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # TODO: Do pylint, and fix code
 # TODO: Define status_mapping as a class-level constant
-# TODO: Verify URL is actually Twitch or YouTube URL
 
 
 # Presence commands for changing bot activity and status
@@ -15,6 +15,31 @@ class Presence(commands.Cog):
         self.bot = bot
         self.current_status = discord.Status.online  # Default status
         self.current_activity: discord.BaseActivity | None = None  # Track current activity
+
+    # Helper to validate streaming URL
+    # only https Twitch/YouTube supported
+    @staticmethod
+    def _is_valid_stream_url(url: str) -> bool:
+        try:
+            parsed = urlparse(url)
+            if parsed.scheme != "https":
+                return False
+            host = (parsed.hostname or "").lower()
+            allowed_hosts = {
+                "twitch.tv",
+                "www.twitch.tv",
+                "youtube.com",
+                "www.youtube.com",
+                "youtu.be",
+            }
+            if host not in allowed_hosts:
+                return False
+            # require some path content (e.g., channel or video id)
+            if not parsed.path or parsed.path == "/":
+                return False
+            return True
+        except Exception:
+            return False
 
     # Group for changing bot activity
     activity_set_group = app_commands.Group(
@@ -96,11 +121,12 @@ class Presence(commands.Cog):
     async def activity_streaming(
             self, interaction: discord.Interaction, title: str, url: str, description: str = None
     ):
-        # Check for valid URL, only https is supported
-        if not url.startswith("https://"):
+        # Check for valid URL, only https Twitch and YouTube is supported
+        if not self._is_valid_stream_url(url):
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} You must provide a valid URL for the stream. "
-                "Example: `https://www.twitch.tv/your_channel`",
+                f"{ERROR_EMOJI} Invalid stream URL. Please provide a Twitch or YouTube https URL. "
+                "Examples: `https://www.twitch.tv/your_channel`, "
+                "`https://www.youtube.com/watch?v=video_id`",
                 ephemeral=True
             )
             return
