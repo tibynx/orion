@@ -6,11 +6,18 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Define status_mapping as a class-level constant
 
 
 # Presence commands for changing bot activity and status
 class Presence(commands.Cog):
+    # Status mapping for indicator command
+    STATUS_MAPPING = {
+        "online": discord.Status.online,
+        "idle": discord.Status.idle,
+        "dnd": discord.Status.do_not_disturb,
+        "invisible": discord.Status.invisible,
+    }
+
     def __init__(self, bot):
         self.bot = bot
         self.current_status = discord.Status.online  # Default status
@@ -92,15 +99,8 @@ class Presence(commands.Cog):
     async def activity_indicator(
             self, interaction: discord.Interaction, status: app_commands.Choice[str]
     ):
-        # Map string choices to discord.Status
-        status_mapping = {
-            "online": discord.Status.online,
-            "idle": discord.Status.idle,
-            "dnd": discord.Status.do_not_disturb,
-            "invisible": discord.Status.invisible,
-        }
         # Set the new status, keep current activity
-        self.current_status = status_mapping[status.value]
+        self.current_status = self.STATUS_MAPPING[status.value]
         await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Status changed to: **{status.name}**",
