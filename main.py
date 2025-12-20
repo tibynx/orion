@@ -49,7 +49,7 @@ class DiscordBot(commands.Bot):
 
     # Load cogs
     async def load_cogs(self) -> None:
-        for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/cogs"):
+        for file in os.listdir(os.path.join(os.path.realpath(os.path.dirname(__file__)), "cogs")):
             if file.endswith(".py"): # Only load python files
                 extension = file[:-3]
                 try:
@@ -108,8 +108,7 @@ class DiscordBot(commands.Bot):
 
     # Log command errors
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
-        self.logger.error("An error occurred in %s", event_name)
-        traceback.print_exc()
+        self.logger.exception("An error occurred in %s", event_name)
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.CommandNotFound):
