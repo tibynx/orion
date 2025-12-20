@@ -147,11 +147,11 @@ class Threads(commands.Cog):
         if thread is None:
             return
         try:
+            await thread.edit(archived=True)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been closed.",
                 ephemeral=True
             )
-            await thread.edit(archived=True)
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to close this thread.",
