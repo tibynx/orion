@@ -6,6 +6,8 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
+# TODO: Validate the file's MIME type and/or magic bytes using a library like 'python-magic'
+# TODO: Add error handling for webhook.send() in the on_submit method in the WebhookSendModal class
 
 
 # Modal for sending messages via webhook ID

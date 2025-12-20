@@ -6,6 +6,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
+# TODO: Use bulk delete operations or gather delete coroutines with asyncio.gather() to delete messages
 
 
 # Moderation commands

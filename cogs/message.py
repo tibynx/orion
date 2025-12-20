@@ -6,6 +6,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
+# TODO: Make user friendly error messages
 
 
 # Modal for sending a message in a channel

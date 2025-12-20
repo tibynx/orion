@@ -5,6 +5,8 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
+# TODO: Define status_mapping as a class-level constant
+# TODO: Verify URL is actually Twitch or YouTube URL
 
 
 # Presence commands for changing bot activity and status
