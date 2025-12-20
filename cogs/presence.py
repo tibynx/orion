@@ -95,7 +95,7 @@ class Presence(commands.Cog):
             self, interaction: discord.Interaction, title: str, url: str, description: str = None
     ):
         # Check for valid URL, only https is supported
-        if not url or not url.startswith("https://"):
+        if not url.startswith("https://"):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} You must provide a valid URL for the stream. "
                 "Example: `https://www.twitch.tv/your_channel`",
