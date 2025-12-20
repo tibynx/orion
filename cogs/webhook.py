@@ -32,7 +32,7 @@ class WebhookSendModal(discord.ui.Modal):
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         await interaction.response.send_message(
             f"{ERROR_EMOJI} An error occurred while sending the message: "
-            f"`{str(error).capitalize()}`",
+            f"`{str(error)}`",
             ephemeral=True
         )
 

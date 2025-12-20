@@ -48,7 +48,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
         else:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} An error occurred while creating the thread: "
-                f"`{str(error).capitalize()}`",
+                f"`{str(error)}`",
                 ephemeral=True
             )
 
@@ -159,7 +159,7 @@ class Threads(commands.Cog):
             )
         except discord.HTTPException as e:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to close thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} Failed to close thread: `{str(e)}`",
                 ephemeral=True
             )
 
@@ -194,7 +194,7 @@ class Threads(commands.Cog):
             )
         except discord.HTTPException as e:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to rename thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} Failed to rename thread: `{str(e)}`",
                 ephemeral=True
             )
 
@@ -245,7 +245,7 @@ class Threads(commands.Cog):
             )
         except discord.HTTPException as e:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to set slowmode for thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} Failed to set slowmode for thread: `{str(e)}`",
                 ephemeral=True
             )
 
@@ -277,7 +277,7 @@ class Threads(commands.Cog):
             )
         except discord.HTTPException as e:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to lock thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} Failed to lock thread: `{str(e)}`",
                 ephemeral=True
             )
 
@@ -309,7 +309,7 @@ class Threads(commands.Cog):
             )
         except discord.HTTPException as e:
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to unlock thread: `{str(e).capitalize()}`",
+                f"{ERROR_EMOJI} Failed to unlock thread: `{str(e)}`",
                 ephemeral=True
             )
 

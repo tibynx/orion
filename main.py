@@ -156,7 +156,7 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, app_commands.CommandInvokeError):
             await send_func(
                 f"{ERROR_EMOJI} An error occurred while executing the command: "
-                f"`{str(error).capitalize()}`",
+                f"`{str(error)}`",
                 ephemeral=True
             )
 
@@ -165,7 +165,7 @@ class DiscordBot(commands.Bot):
             self.logger.error("Unhandled exception in command '%s': %s", command_name, error)
             await send_func(
                 f"{ERROR_EMOJI} An unexpected error occurred while executing the command: "
-                f"`{str(error).capitalize()}`",
+                f"`{str(error)}`",
                 ephemeral=True
             )
 
