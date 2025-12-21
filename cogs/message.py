@@ -6,7 +6,11 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Check self-dm with helper
+
+
+# Helper to check if the user is the bot itself.
+def is_self_dm(bot: commands.Bot, user: discord.User) -> bool:
+    return user == bot.user
 
 
 # Modal for sending a message in a channel
@@ -170,7 +174,7 @@ class Message(commands.Cog):
     async def send_dm_modal(
             self, interaction: discord.Interaction, user: discord.User
     ):
-        if user == self.bot.user:
+        if is_self_dm(self.bot, user):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a DM to myself.",
                 ephemeral=True
@@ -196,7 +200,7 @@ class Message(commands.Cog):
     # Requires manage guild permission
     @app_commands.default_permissions(manage_guild=True)
     async def dm_command_callback(self, interaction: discord.Interaction, user: discord.User):
-        if user == self.bot.user:
+        if is_self_dm(self.bot, user):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a DM to myself.",
                 ephemeral=True
