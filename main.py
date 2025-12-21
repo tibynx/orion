@@ -56,8 +56,11 @@ class DiscordBot(commands.Bot):
                     await self.load_extension(f"cogs.{extension}")
                     self.logger.info("Loaded extension '%s'", extension)
                 except Exception as e:
-                    exception = f"{type(e).__name__}: {e}"
-                    self.logger.error("Failed to load extension '%s'\n%s", extension, exception)
+                    self.logger.error(
+                        "Failed to load extension '%s': %s",extension, type(e).__name__
+                    )
+                    self.logger.error(e)
+                    self.logger.error(traceback.format_exc())
 
 
     async def setup_hook(self) -> None:
