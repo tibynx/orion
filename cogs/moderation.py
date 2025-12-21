@@ -46,9 +46,15 @@ class Moderation(commands.Cog):
                 f"{SUCCESS_EMOJI} Successfully purged {len(deleted)} messages.",
                 ephemeral=True
             )
-        except discord.HTTPException:
+        except discord.Forbidden:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} I don't have permission to purge messages.",
+                ephemeral=True
+            )
+        except discord.HTTPException:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
+                "I might got rate limited. Please try again later.",
                 ephemeral=True
             )
 
