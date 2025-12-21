@@ -45,12 +45,6 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
                 f"{ERROR_EMOJI} I don't have permission to create threads in this channel.",
                 ephemeral=True
             )
-        else:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while creating the thread: "
-                f"`{str(error)}`",
-                ephemeral=True
-            )
 
 
 # Thread management commands
@@ -73,7 +67,6 @@ class Threads(commands.Cog):
         # If used inside a thread, return it directly
         if isinstance(interaction.channel, discord.Thread):
             return interaction.channel
-
         # If not inside a thread and no ID provided
         if not thread_id:
             await interaction.response.send_message(
@@ -82,7 +75,6 @@ class Threads(commands.Cog):
                 ephemeral=True
             )
             return None
-
         # Try to fetch by ID and ensure it's a thread
         try:
             channel = await self.bot.fetch_channel(int(thread_id))
@@ -98,7 +90,6 @@ class Threads(commands.Cog):
                 ephemeral=True
             )
             return None
-
         if not isinstance(channel, discord.Thread):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified ID is not a thread.",
@@ -157,11 +148,6 @@ class Threads(commands.Cog):
                 f"{ERROR_EMOJI} I don't have permission to close this thread.",
                 ephemeral=True
             )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to close thread: `{str(e)}`",
-                ephemeral=True
-            )
 
 
     # Rename thread
@@ -190,11 +176,6 @@ class Threads(commands.Cog):
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to rename this thread.",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to rename thread: `{str(e)}`",
                 ephemeral=True
             )
 
@@ -243,11 +224,6 @@ class Threads(commands.Cog):
                 f"{ERROR_EMOJI} I don't have permission to set slowmode for this thread.",
                 ephemeral=True
             )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to set slowmode for thread: `{str(e)}`",
-                ephemeral=True
-            )
 
 
     # Lock thread
@@ -275,11 +251,6 @@ class Threads(commands.Cog):
                 f"{ERROR_EMOJI} I don't have permission to lock this thread.",
                 ephemeral=True
             )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to lock thread: `{str(e)}`",
-                ephemeral=True
-            )
 
 
     # Unlock thread
@@ -305,11 +276,6 @@ class Threads(commands.Cog):
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to unlock this thread.",
-                ephemeral=True
-            )
-        except discord.HTTPException as e:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} Failed to unlock thread: `{str(e)}`",
                 ephemeral=True
             )
 
