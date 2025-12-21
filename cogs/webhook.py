@@ -303,7 +303,7 @@ class Webhook(commands.Cog):
                 ephemeral=True
             )
             return
-        await interaction.response.send_message(view=WebookDeleteDialog(webhook), ephemeral=True)
+        await interaction.response.send_message(view=WebhookDeleteDialog(webhook), ephemeral=True)
 
 
     # Send a message through a webhook using its ID (opens modal)
