@@ -128,23 +128,21 @@ class DiscordBot(commands.Bot):
 
 
         # User doesn't have permission to execute the command
-        if (isinstance(error, app_commands.MissingPermissions)
-                or isinstance(error, app_commands.errors.CheckFailure)):
+        if isinstance(error, (app_commands.MissingPermissions, app_commands.errors.CheckFailure)):
             await send_func(
                 f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
             )
 
         # Bot doesn't have permission to execute the command
-        elif (isinstance(error, app_commands.BotMissingPermissions)
-              or isinstance(error, discord.Forbidden)):
+        elif isinstance(error, (app_commands.BotMissingPermissions, discord.Forbidden)):
             await send_func(
                 f"{ERROR_EMOJI} I don't have permission to execute this command.",
                 ephemeral=True
             )
 
         # Command doesn't exist
-        # Happens when a command is updated but the client hasn't refreshed
+        # Happens when a command is updated, but the client hasn't refreshed
         elif isinstance(error, app_commands.CommandNotFound):
             await send_func(
                 f"{ERROR_EMOJI} Command not found. Please refresh your client.",
