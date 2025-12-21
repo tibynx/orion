@@ -306,6 +306,34 @@ class Webhook(commands.Cog):
         await interaction.response.send_message(view=WebhookDeleteDialog(webhook), ephemeral=True)
 
 
+    # Show webhook url
+    @app_commands.command(
+        name="webhookurl",
+        description="Show the URL of a webhook."
+    )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_webhooks=True)
+    @app_commands.describe(
+        webhook_id="The ID of the webhook to show the URL for"
+    )
+    async def webhook_url(self, interaction: discord.Interaction, webhook_id: str) -> None:
+        try:
+            webhook = await self.bot.fetch_webhook(webhook_id)
+            if self._is_readonly_webhook(webhook):
+                return await interaction.response.send_message(
+                    f"{ERROR_EMOJI} You cannot get the URL for this webhook.",
+                    ephemeral=True
+                )
+            await interaction.response.send_message(
+                f"{webhook.name}: `{webhook.url}`", ephemeral=True
+            )
+        except discord.NotFound:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
+                ephemeral=True
+            )
+
+
     # Send a message through a webhook using its ID (opens modal)
     @app_commands.command(
         name="webhookmsg",
