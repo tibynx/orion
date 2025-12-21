@@ -137,7 +137,7 @@ class WebhookButtons(discord.ui.View):
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
-            view=WebookDeleteDialog(self.webhook), ephemeral=True
+            view=WebhookDeleteDialog(self.webhook), ephemeral=True
         )
 
 
@@ -152,7 +152,7 @@ class WebhookDeleteButton(discord.ui.View):
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
-            view=WebookDeleteDialog(self.webhook), ephemeral=True
+            view=WebhookDeleteDialog(self.webhook), ephemeral=True
         )
 
 
