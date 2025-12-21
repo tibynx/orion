@@ -6,7 +6,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Make user friendly error messages
+# TODO: Check self-dm with helper
 
 
 # Modal for sending a message in a channel
@@ -31,11 +31,16 @@ class MessageModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the message:"
-            + f" `{str(error)}`",
-            ephemeral=True
-        )
+        if isinstance(error, discord.NotFound):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} The specified channel cannot be found.",
+                ephemeral=True
+            )
+        elif isinstance(error, discord.Forbidden):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} I don't have permission to send messages to this channel.",
+                ephemeral=True
+            )
 
 
 # Modal for sending a direct message to a user
@@ -61,33 +66,17 @@ class DmModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        # Use followup if the interaction response has already been used/deferred
-        if isinstance(error, discord.Forbidden):
-            if interaction.response.is_done():
-                await interaction.followup.send(
-                    f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
-                    "They might have DMs disabled.",
-                    ephemeral=True
-                )
-            else:
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
-                    "They might have DMs disabled.",
-                    ephemeral=True
-                )
-        else:
-            if interaction.response.is_done():
-                await interaction.followup.send(
-                    f"{ERROR_EMOJI} An error occurred while sending the direct message: "
-                    f"`{str(error)}`",
-                    ephemeral=True
-                )
-            else:
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} An error occurred while sending the direct message: "
-                    f"`{str(error)}`",
-                    ephemeral=True
-                )
+        if isinstance(error, discord.NotFound):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} This user is no longer available.",
+                ephemeral=True
+            )
+        elif isinstance(error, discord.Forbidden):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
+                "They might have DMs disabled.",
+                ephemeral=True
+            )
 
 
 # Modal for replying to a message
@@ -105,17 +94,23 @@ class ReplyModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         await self.message.reply(self.reply_message.value)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{SUCCESS_EMOJI} Reply sent successfully to {self.message.author.mention}.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the reply: "
-            f"`{str(error)}`",
-            ephemeral=True
-        )
+        if isinstance(error, discord.NotFound):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} This message is no longer available.",
+                ephemeral=True
+            )
+        elif isinstance(error, discord.Forbidden):
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} I don't have permission to reply to this message.",
+                ephemeral=True
+            )
 
 
 # Message commands

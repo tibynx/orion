@@ -41,12 +41,6 @@ class WebhookSendModal(discord.ui.Modal):
                 f"{ERROR_EMOJI} I don't have permission to send messages with this webhook.",
                 ephemeral=True
             )
-        else:
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} An error occurred while sending the message: "
-                f"`{str(error)}`",
-                ephemeral=True
-            )
 
 
 # Webhook deletion dialog
