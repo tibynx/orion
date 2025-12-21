@@ -2,11 +2,11 @@ from typing import Union
 import discord
 from discord.ext import commands
 from discord import app_commands
+import filetype
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Validate the file's MIME type and/or magic bytes using a library like 'python-magic'
 
 
 # Modal for sending messages via webhook ID
@@ -420,9 +420,11 @@ class Webhook(commands.Cog):
     async def webhook_edit_avatar(
             self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment
     ) -> None:
-        if not avatar.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        avatar_bytes = await avatar.read() # Read the file content once
+        kind = filetype.guess(avatar_bytes) # Validate MIME type using magic bytes
+        if kind is None or kind.mime not in {'image/png', 'image/jpeg', 'image/gif'}:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Only .png, .jpg, .jpeg, and .gif files are supported.",
+                f"{ERROR_EMOJI} Invalid file type. Only PNG, JPEG, and GIF images are supported.",
                 ephemeral=True
             )
         try:
@@ -433,7 +435,7 @@ class Webhook(commands.Cog):
                     f"{ERROR_EMOJI} You cannot change the avatar for this webhook.",
                     ephemeral=True
                 )
-            await webhook.edit(avatar=await avatar.read())
+            await webhook.edit(avatar=avatar_bytes)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Webhook **{webhook.name}** avatar changed successfully.",
                 ephemeral=True
