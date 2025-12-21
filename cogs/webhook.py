@@ -7,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # TODO: Do pylint, and fix code
 # TODO: Validate the file's MIME type and/or magic bytes using a library like 'python-magic'
-# TODO: Add error handling for webhook.send() in the on_submit method in the WebhookSendModal class
 
 
 # Modal for sending messages via webhook ID
@@ -32,11 +31,22 @@ class WebhookSendModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        await interaction.response.send_message(
-            f"{ERROR_EMOJI} An error occurred while sending the message: "
-            f"`{str(error)}`",
-            ephemeral=True
-        )
+        if isinstance(error, discord.NotFound):
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The specified webhook cannot be found.",
+                ephemeral=True
+            )
+        elif isinstance(error, discord.Forbidden):
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to send messages with this webhook.",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} An error occurred while sending the message: "
+                f"`{str(error)}`",
+                ephemeral=True
+            )
 
 
 # Webhook deletion dialog
