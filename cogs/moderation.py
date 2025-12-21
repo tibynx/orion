@@ -81,9 +81,15 @@ class Moderation(commands.Cog):
                 channel = interaction.channel # Default to current channel
             pinned_messages = await channel.pins() # Get pinned messages
             delete_tasks = [message.delete() for message in pinned_messages]
-            await asyncio.gather(*delete_tasks)  # Delete pinned messages concurrently
+            # Delete pinned messages concurrently
+            results = await asyncio.gather(*delete_tasks, return_exceptions=True)
+            success_count = sum(1 for r in results if not isinstance(r, Exception))
+            failed_count = len(results) - success_count
+            message_text = f"{SUCCESS_EMOJI} Successfully purged {success_count} pinned messages."
+            if failed_count:
+                message_text += f" {failed_count} messages could not be deleted."
             await interaction.followup.send(
-                f"{SUCCESS_EMOJI} Successfully purged {len(pinned_messages)} pinned messages.",
+                message_text,
                 ephemeral=True
             )
         except discord.Forbidden:
