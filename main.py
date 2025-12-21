@@ -149,6 +149,14 @@ class DiscordBot(commands.Bot):
                 ephemeral=True
             )
 
+        # Network issues or rate limiting
+        elif isinstance(error, discord.HTTPException):
+            await send_func(
+                f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
+                "I might have been rate limited. Please try again later.",
+                ephemeral=True
+            )
+
         # Command raised an unexpected error
         elif isinstance(error, app_commands.CommandInvokeError):
             await send_func(
