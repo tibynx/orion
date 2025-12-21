@@ -1,4 +1,5 @@
 from typing import Union
+import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -6,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Use bulk delete operations or gather delete coroutines with asyncio.gather() to delete messages
 
 
 # Moderation commands
@@ -74,8 +74,8 @@ class Moderation(commands.Cog):
             if channel is None:
                 channel = interaction.channel # Default to current channel
             pinned_messages = await channel.pins() # Get pinned messages
-            for message in pinned_messages:
-                await message.delete()  # Delete each pinned message
+            delete_tasks = [message.delete() for message in pinned_messages]
+            await asyncio.gather(*delete_tasks)  # Delete pinned messages concurrently
             await interaction.followup.send(
                 f"{SUCCESS_EMOJI} Successfully purged {len(pinned_messages)} pinned messages.",
                 ephemeral=True
