@@ -116,21 +116,21 @@ class DiscordBot(commands.Bot):
 
         # Check if interaction was already responded to
         if interaction.response.is_done():
-            send_func = interaction.followup.send
+            send_msg = interaction.followup.send
         else:
-            send_func = interaction.response.send_message
+            send_msg = interaction.response.send_message
 
 
         # User doesn't have permission to execute the command
         if isinstance(error, (app_commands.MissingPermissions, app_commands.errors.CheckFailure)):
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
             )
 
         # Bot doesn't have permission to execute the command
         elif isinstance(error, (app_commands.BotMissingPermissions, discord.Forbidden)):
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} I don't have permission to execute this command.",
                 ephemeral=True
             )
@@ -138,7 +138,7 @@ class DiscordBot(commands.Bot):
         # Command doesn't exist
         # Happens when a command is updated, but the client hasn't refreshed
         elif isinstance(error, app_commands.CommandNotFound):
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} Command not found. Please refresh your client.",
                 ephemeral=True
             )
@@ -151,7 +151,7 @@ class DiscordBot(commands.Bot):
                 command_name, interaction.user.name, interaction.user.id,
                 interaction.guild.name, interaction.guild.id, error
             )
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
                 "I might have been rate limited. Please try again later.",
                 ephemeral=True
@@ -167,7 +167,7 @@ class DiscordBot(commands.Bot):
                 interaction.guild.name, interaction.guild.id, original,
                 exc_info=(type(original), original, original.__traceback__),
             )
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} An error occurred while executing the command.",
                 ephemeral=True
             )
@@ -182,7 +182,7 @@ class DiscordBot(commands.Bot):
                 interaction.guild.name, interaction.guild.id, error,
                 exc_info=(type(error), error, error.__traceback__),
             )
-            await send_func(
+            await send_msg(
                 f"{ERROR_EMOJI} An unexpected error occurred while executing the command.",
                 ephemeral=True
             )
