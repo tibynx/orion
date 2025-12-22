@@ -1,9 +1,9 @@
 import logging
 import os
-from dotenv import load_dotenv
 import discord
 from discord import app_commands
 from discord.ext import commands
+from config import BOT_TOKEN, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
@@ -14,10 +14,6 @@ from discord.ext import commands
 # TODO: Make poetry config
 # TODO: Make IDEA run configurations for PyCharm
 
-
-# Load environment variables
-load_dotenv()
-from config import ERROR_EMOJI
 
 # Set intents
 intents = discord.Intents.default()
@@ -199,7 +195,6 @@ class DiscordBot(commands.Bot):
 # Run the bot
 bot = DiscordBot()
 
-TOKEN = os.getenv('BOT_TOKEN')
-if not TOKEN:
+if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN not found in environment variables")
-bot.run(TOKEN)
+bot.run(BOT_TOKEN)
