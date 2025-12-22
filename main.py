@@ -1,5 +1,4 @@
 import logging
-import traceback
 import os
 from dotenv import load_dotenv
 import discord
@@ -55,12 +54,11 @@ class DiscordBot(commands.Bot):
                 try:
                     await self.load_extension(f"cogs.{extension}")
                     self.logger.info("Loaded extension '%s'", extension)
-                except Exception as e:
+                except Exception as error:
                     self.logger.error(
-                        "Failed to load extension '%s': %s",extension, type(e).__name__
+                        "Failed to load extension '%s': %s", extension, type(error).__name__
                     )
-                    self.logger.error(e)
-                    self.logger.error(traceback.format_exc())
+                    self.logger.exception(error)
 
 
     async def setup_hook(self) -> None:
@@ -75,8 +73,9 @@ class DiscordBot(commands.Bot):
         try:
             synced = await self.tree.sync() # Sync all commands globally
             self.logger.info("Synced %d interactions globally", len(synced))
-        except Exception as e:
-            self.logger.error("Failed to sync interaction: %s: %s", type(e).__name__, e)
+        except Exception as error:
+            self.logger.error("Failed to sync interaction: %s", type(error).__name__)
+            self.logger.exception(error)
 
 
     # Log guild join
@@ -154,6 +153,12 @@ class DiscordBot(commands.Bot):
 
         # Network issues or rate limiting
         elif isinstance(error, discord.HTTPException):
+            self.logger.warning(
+                "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
+                "guild '%s' (ID: %s): %s",
+                command_name, interaction.user.name, interaction.user.id,
+                interaction.guild.name, interaction.guild.id, error
+            )
             await send_func(
                 f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
                 "I might have been rate limited. Please try again later.",
@@ -162,18 +167,31 @@ class DiscordBot(commands.Bot):
 
         # Command raised an unexpected error
         elif isinstance(error, app_commands.CommandInvokeError):
+            original = getattr(error, "original", error)
+            self.logger.error(
+                "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
+                "guild '%s' (ID: %s): %r",
+                command_name, interaction.user.name, interaction.user.id,
+                interaction.guild.name, interaction.guild.id, original,
+                exc_info=(type(original), original, original.__traceback__),
+            )
             await send_func(
-                f"{ERROR_EMOJI} An error occurred while executing the command: "
-                f"`{str(error)}`",
+                f"{ERROR_EMOJI} An error occurred while executing the command.",
                 ephemeral=True
             )
+            return
 
         # Other errors
         else:
-            self.logger.error("Unhandled exception in command '%s': %s", command_name, error)
+            self.logger.error(
+                "Unhandled app command error in interaction '%s' by user %s (ID: %s) in "
+                "guild '%s' (ID: %s): %r",
+                command_name, interaction.user.name, interaction.user.id,
+                interaction.guild.name, interaction.guild.id, error,
+                exc_info=(type(error), error, error.__traceback__),
+            )
             await send_func(
-                f"{ERROR_EMOJI} An unexpected error occurred while executing the command: "
-                f"`{str(error)}`",
+                f"{ERROR_EMOJI} An unexpected error occurred while executing the command.",
                 ephemeral=True
             )
 
