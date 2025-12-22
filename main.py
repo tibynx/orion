@@ -12,7 +12,6 @@ from config import BOT_TOKEN, ERROR_EMOJI
 # TODO: Create a GitHub Workflow to check code with pylint on each push
 # TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
 # TODO: Make poetry config
-# TODO: Make IDEA run configurations for PyCharm
 
 
 # Set intents
