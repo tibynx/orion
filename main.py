@@ -8,9 +8,6 @@ from config import BOT_TOKEN, ERROR_EMOJI
 
 # TODO: Do pylint, and fix code
 # TODO: Add a proper README.md
-# TODO: Make a Dockerfile for easy deployment
-# TODO: Create a GitHub Workflow to check code with pylint on each push
-# TODO: Create a GitHub Workflow to automatically build and push Docker images on each release
 # TODO: Make poetry config
 
 
