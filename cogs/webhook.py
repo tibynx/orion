@@ -7,6 +7,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
+# TODO: Send multiple embeds for webhook list if too many webhooks
 
 
 # Modal for sending messages via webhook ID
@@ -25,19 +26,20 @@ class WebhookSendModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
         await self.webhook.send(content=self.message.value)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{SUCCESS_EMOJI} Message sent successfully.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
         elif isinstance(error, discord.Forbidden):
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{ERROR_EMOJI} I don't have permission to send messages with this webhook.",
                 ephemeral=True
             )
@@ -228,10 +230,11 @@ class Webhook(commands.Cog):
     # Requires manage webhooks permission
     @app_commands.default_permissions(manage_webhooks=True)
     async def webhook_list(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
         webhooks = await interaction.guild.webhooks()
         # Check if there are no webhooks
         if not webhooks:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"{ERROR_EMOJI} No webhooks found in this server.",
                 ephemeral=True
             )
@@ -246,7 +249,7 @@ class Webhook(commands.Cog):
         embed.set_footer(text="🛈  Use the /webhookget command "
                               "to get details about a specific webhook."
                          )
-        return await interaction.response.send_message(embed=embed, ephemeral=True)
+        return await interaction.followup.send(embed=embed, ephemeral=True)
 
 
     # Create a webhook
@@ -420,10 +423,11 @@ class Webhook(commands.Cog):
     async def webhook_edit_avatar(
             self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment
     ) -> None:
+        await interaction.response.defer(ephemeral=True)
         avatar_bytes = await avatar.read() # Read the file content once
         kind = filetype.guess(avatar_bytes) # Validate MIME type using magic bytes
         if kind is None or kind.mime not in {'image/png', 'image/jpeg', 'image/gif'}:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"{ERROR_EMOJI} Invalid file type. Only PNG, JPEG, and GIF images are supported.",
                 ephemeral=True
             )
@@ -431,17 +435,17 @@ class Webhook(commands.Cog):
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
             if self._is_readonly_webhook(webhook):
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     f"{ERROR_EMOJI} You cannot change the avatar for this webhook.",
                     ephemeral=True
                 )
             await webhook.edit(avatar=avatar_bytes)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{SUCCESS_EMOJI} Webhook **{webhook.name}** avatar changed successfully.",
                 ephemeral=True
             )
         except discord.NotFound:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
