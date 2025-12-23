@@ -7,7 +7,6 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
 # TODO: Do pylint, and fix code
-# TODO: Send multiple embeds for webhook list if too many webhooks
 
 
 # Modal for sending messages via webhook ID
@@ -166,6 +165,35 @@ class Webhook(commands.Cog):
             discord.WebhookType.channel_follower, discord.WebhookType.application
         )
 
+    @staticmethod
+    def _build_webhook_embeds(
+            webhooks: list[discord.Webhook], guild_name: str
+    ) -> list[discord.Embed]:
+        # Split webhooks into multiple embeds to respect the 25-field limit per embed.
+        chunk_size = 25
+        embeds: list[discord.Embed] = []
+        for index in range(0, len(webhooks), chunk_size):
+            page = index // chunk_size + 1
+            embed = discord.Embed(
+                title=f"Webhooks in {guild_name}",
+                color=None
+            )
+            for webhook in webhooks[index:index + chunk_size]:
+                embed.add_field(
+                    name=webhook.name,
+                    value=(
+                        f"Channel: {webhook.channel.mention}\n"
+                        f"Created by: {webhook.user.mention}\nID: `{webhook.id}`"
+                    ),
+                    inline=False
+                )
+            embed.set_footer(
+                text=f"Page {page}  •  Total: {len(webhooks)}"
+            )
+            embeds.append(embed)
+        return embeds
+
+
     # Group for editing webhooks
     webhook_edit_group = app_commands.Group(
         name="webhookedit",
@@ -224,7 +252,8 @@ class Webhook(commands.Cog):
     # List all webhooks
     @app_commands.command(
         name="webhooklist",
-        description="List all webhooks in the current server."
+        description="List all webhooks in the server. "
+                    "Use the /webhookget command to get info about a specific webhook."
     )
     @app_commands.guild_only()
     # Requires manage webhooks permission
@@ -238,18 +267,11 @@ class Webhook(commands.Cog):
                 f"{ERROR_EMOJI} No webhooks found in this server.",
                 ephemeral=True
             )
-        embed = discord.Embed(title=f"Webhooks in {interaction.guild.name}", color=None)
-        for webhook in webhooks:
-            embed.add_field(
-                name=webhook.name,
-                value=f"Channel: {webhook.channel.mention}\n"
-                      f"Created by: {webhook.user.mention}\nID: `{webhook.id}`",
-                inline=False
-            )
-        embed.set_footer(text="🛈  Use the /webhookget command "
-                              "to get details about a specific webhook."
-                         )
-        return await interaction.followup.send(embed=embed, ephemeral=True)
+        embeds = self._build_webhook_embeds(webhooks, interaction.guild.name)
+        # Send pages sequentially to stay ephemeral per message
+        for index, embed in enumerate(embeds):
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        return None
 
 
     # Create a webhook
