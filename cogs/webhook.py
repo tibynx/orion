@@ -7,9 +7,6 @@ import filetype
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
-
-
 # Modal for sending messages via webhook ID
 class WebhookSendModal(discord.ui.Modal):
     """Modal for sending a message using a specific webhook."""
@@ -334,7 +331,10 @@ class Webhook(commands.Cog):
             embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
             embed.set_thumbnail(url=webhook.display_avatar.url)
             # We don't check if the webhook user is a bot, because it always will be
-            embed.set_footer(text="🛈  Use the /webhookedit commands to edit this webhook's details.")
+            embed.set_footer(
+                text="🛈  Use the /webhookedit commands to "
+                     "edit this webhook's details."
+            )
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.",
                 embed=embed, view=WebhookButtons(webhook), ephemeral=True
