@@ -1,3 +1,4 @@
+"""Cog for managing message-related interactions."""
 from typing import Union
 import discord
 from discord.ext import commands
@@ -10,12 +11,15 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Helper to check if the user is the bot itself.
 def is_self_dm(bot: commands.Bot, user: discord.User) -> bool:
+    """Check if the target user is the bot itself."""
     return user == bot.user
 
 
 # Modal for sending a message in a channel
 class MessageModal(discord.ui.Modal):
+    """Modal for sending a message to a specific channel."""
     def __init__(self, channel: discord.abc.Messageable):
+        """Initialize the modal with the target channel."""
         super().__init__(title=f"Message #{channel.name}")
         self.channel = channel
 
@@ -28,6 +32,7 @@ class MessageModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        """Send the message to the channel upon submission."""
         await interaction.response.defer(ephemeral=True)
         await self.channel.send(self.message.value)
         await interaction.followup.send(
@@ -35,6 +40,7 @@ class MessageModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during message submission."""
         if isinstance(error, discord.NotFound):
             msg = f"{ERROR_EMOJI} The specified channel cannot be found."
         elif isinstance(error, discord.Forbidden):
@@ -51,7 +57,9 @@ class MessageModal(discord.ui.Modal):
 
 # Modal for sending a direct message to a user
 class DmModal(discord.ui.Modal):
+    """Modal for sending a direct message to a user."""
     def __init__(self, user: discord.User):
+        """Initialize the modal with the target user."""
         super().__init__(title=f"Message {user.name}")
         self.user = user
 
@@ -64,6 +72,7 @@ class DmModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        """Send the direct message upon submission."""
         # Defer the response to avoid interaction timeout while sending the DM
         await interaction.response.defer(ephemeral=True)
         await self.user.send(self.message.value)
@@ -72,6 +81,7 @@ class DmModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during direct message submission."""
         if isinstance(error, discord.NotFound):
             msg = f"{ERROR_EMOJI} This user is no longer available."
         elif isinstance(error, discord.Forbidden):
@@ -89,7 +99,9 @@ class DmModal(discord.ui.Modal):
 
 # Modal for replying to a message
 class ReplyModal(discord.ui.Modal):
+    """Modal for replying to a specific message."""
     def __init__(self, message: discord.Message):
+        """Initialize the modal with the target message."""
         super().__init__(title=f"Reply to {message.author.name}")
         self.message = message
 
@@ -102,6 +114,7 @@ class ReplyModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        """Send the reply upon submission."""
         await interaction.response.defer(ephemeral=True)
         await self.message.reply(self.reply_message.value)
         await interaction.followup.send(
@@ -109,6 +122,7 @@ class ReplyModal(discord.ui.Modal):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during reply submission."""
         if isinstance(error, discord.NotFound):
             msg = f"{ERROR_EMOJI} This message is no longer available."
         elif isinstance(error, discord.Forbidden):
@@ -125,7 +139,9 @@ class ReplyModal(discord.ui.Modal):
 
 # Message commands
 class Message(commands.Cog):
+    """Cog for sending and replying to messages."""
     def __init__(self, bot):
+        """Initialize the cog with the bot instance."""
         self.bot = bot
 
         # Context menu command for replying to a message
@@ -162,6 +178,7 @@ class Message(commands.Cog):
             discord.StageChannel, discord.VoiceChannel
         ],
     ):
+        """Display a modal to send a message to a specific channel."""
         # Send the message modal
         await interaction.response.send_modal(MessageModal(channel))
 
@@ -180,6 +197,7 @@ class Message(commands.Cog):
     async def send_dm_modal(
             self, interaction: discord.Interaction, user: discord.User
     ):
+        """Display a modal to send a direct message to a user."""
         if is_self_dm(self.bot, user):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a DM to myself.",
@@ -197,6 +215,7 @@ class Message(commands.Cog):
     async def reply_command_callback(
             self, interaction: discord.Interaction, message: discord.Message
     ):
+        """Display a modal to reply to a message via context menu."""
         # Send the reply modal
         await interaction.response.send_modal(ReplyModal(message))
 
@@ -206,6 +225,7 @@ class Message(commands.Cog):
     # Requires manage guild permission
     @app_commands.default_permissions(manage_guild=True)
     async def dm_command_callback(self, interaction: discord.Interaction, user: discord.User):
+        """Display a modal to send a direct message to a user via context menu."""
         if is_self_dm(self.bot, user):
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I cannot send a DM to myself.",
@@ -218,4 +238,5 @@ class Message(commands.Cog):
 
 
 async def setup(bot):
+    """Add the Message cog to the bot."""
     await bot.add_cog(Message(bot))

@@ -1,3 +1,4 @@
+"""Cog for managing and interacting with Discord webhooks."""
 from typing import Union
 import discord
 from discord.ext import commands
@@ -11,7 +12,9 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Modal for sending messages via webhook ID
 class WebhookSendModal(discord.ui.Modal):
+    """Modal for sending a message using a specific webhook."""
     def __init__(self, bot, webhook: discord.Webhook):
+        """Initialize the modal with the webhook instance."""
         super().__init__(title=f"Send Message via {webhook.name}")
         self.bot = bot
         self.webhook = webhook
@@ -25,6 +28,7 @@ class WebhookSendModal(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        """Send the message through the webhook upon submission."""
         await interaction.response.defer(ephemeral=True)
         await self.webhook.send(content=self.message.value)
         await interaction.followup.send(
@@ -33,6 +37,7 @@ class WebhookSendModal(discord.ui.Modal):
         )
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during webhook message submission."""
         if isinstance(error, discord.NotFound):
             msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
@@ -49,7 +54,9 @@ class WebhookSendModal(discord.ui.Modal):
 
 # Webhook deletion dialog
 class WebhookDeleteDialog(discord.ui.LayoutView):
+    """View for confirming webhook deletion."""
     def __init__(self, webhook: discord.Webhook):
+        """Initialize the dialog with the target webhook."""
         super().__init__()
         self.webhook = webhook
 
@@ -76,11 +83,13 @@ class WebhookDeleteDialog(discord.ui.LayoutView):
 
     # If we cancel, the message just gets removed
     async def cancel_button_callback(self, interaction: discord.Interaction) -> None:
+        """Cancel the deletion process and remove the dialog."""
         await interaction.response.defer()
         await interaction.delete_original_response()
 
     # If we delete, it deletes the message, then tries to delete the webhook
     async def delete_button_callback(self, interaction: discord.Interaction) -> None:
+        """Execute the webhook deletion."""
         await interaction.response.defer()
         try:
             await self.webhook.delete()
@@ -105,7 +114,9 @@ class WebhookDeleteDialog(discord.ui.LayoutView):
 
 # Webhook buttons
 class WebhookButtons(discord.ui.View):
+    """View providing management buttons for a webhook."""
     def __init__(self, webhook: discord.Webhook):
+        """Initialize the buttons with the webhook instance."""
         super().__init__()
         self.webhook = webhook
 
@@ -113,6 +124,7 @@ class WebhookButtons(discord.ui.View):
     # Sends the webhook message modal
     @discord.ui.button(label="Send Message", style=discord.ButtonStyle.primary)
     async def send_message(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Display the modal to send a message via this webhook."""
         # Prevent sending messages to forum channels
         if isinstance(self.webhook.channel, discord.ForumChannel):
             await interaction.response.send_message(
@@ -126,6 +138,7 @@ class WebhookButtons(discord.ui.View):
     # Sends the webhook URL in an ephemeral message
     @discord.ui.button(label="Show Webhook URL", style=discord.ButtonStyle.secondary)
     async def show_url(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Display the webhook's URL securely."""
         await interaction.response.send_message(
             f"{self.webhook.name}: `{self.webhook.url}`", ephemeral=True
         )
@@ -134,6 +147,7 @@ class WebhookButtons(discord.ui.View):
     # Sends the webhook deletion confirmation modal
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Display the deletion confirmation dialog."""
         await interaction.response.send_message(
             view=WebhookDeleteDialog(self.webhook), ephemeral=True
         )
@@ -141,7 +155,9 @@ class WebhookButtons(discord.ui.View):
 
 # Separate delete button for channel follower and application webhooks
 class WebhookDeleteButton(discord.ui.View):
+    """View providing only a delete button for certain webhook types."""
     def __init__(self, webhook: discord.Webhook):
+        """Initialize the button with the webhook instance."""
         super().__init__()
         self.webhook = webhook
 
@@ -149,6 +165,7 @@ class WebhookDeleteButton(discord.ui.View):
     # Sends the webhook deletion confirmation modal
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Display the deletion confirmation dialog."""
         await interaction.response.send_message(
             view=WebhookDeleteDialog(self.webhook), ephemeral=True
         )
@@ -157,12 +174,15 @@ class WebhookDeleteButton(discord.ui.View):
 
 # Webhook commands
 class Webhook(commands.Cog):
+    """Cog for advanced webhook management."""
     def __init__(self, bot):
+        """Initialize the cog with the bot instance."""
         self.bot = bot
 
     # Helper to classify read-only webhooks
     @staticmethod
     def _is_readonly_webhook(webhook: discord.Webhook) -> bool:
+        """Check if a webhook is read-only based on its type."""
         # Return True if a webhook type is a channel follower or application.
         return webhook.type in (
             discord.WebhookType.channel_follower, discord.WebhookType.application
@@ -172,6 +192,7 @@ class Webhook(commands.Cog):
     def _build_webhook_embeds(
             webhooks: list[discord.Webhook], guild_name: str
     ) -> list[discord.Embed]:
+        """Split webhooks into multiple embeds to respect the 25-field limit."""
         # Split webhooks into multiple embeds to respect the 25-field limit per embed.
         chunk_size = 25
         embeds: list[discord.Embed] = []
@@ -220,6 +241,7 @@ class Webhook(commands.Cog):
         webhook_id="The ID of the webhook to fetch"
     )
     async def webhook_get(self, interaction: discord.Interaction, webhook_id: str) -> None:
+        """Fetch and display details of a specific webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             embed = discord.Embed(
@@ -262,6 +284,7 @@ class Webhook(commands.Cog):
     # Requires manage webhooks permission
     @app_commands.default_permissions(manage_webhooks=True)
     async def webhook_list(self, interaction: discord.Interaction) -> None:
+        """List all webhooks available in the current guild."""
         await interaction.response.defer(ephemeral=True)
         webhooks = await interaction.guild.webhooks()
         # Check if there are no webhooks
@@ -297,6 +320,7 @@ class Webhook(commands.Cog):
         ],
         name: str
     ) -> None:
+        """Create a new webhook in a specified channel."""
         try:
             webhook = await channel.create_webhook(name=name)
             embed = discord.Embed(
@@ -336,6 +360,7 @@ class Webhook(commands.Cog):
         webhook_id="The ID of the webhook to delete"
     )
     async def webhook_delete(self, interaction: discord.Interaction, webhook_id: str) -> None:
+        """Display a confirmation dialog to delete a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.NotFound:
@@ -358,6 +383,7 @@ class Webhook(commands.Cog):
         webhook_id="The ID of the webhook to show the URL for"
     )
     async def webhook_url(self, interaction: discord.Interaction, webhook_id: str) -> None:
+        """Display the URL of a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             if self._is_readonly_webhook(webhook):
@@ -386,6 +412,7 @@ class Webhook(commands.Cog):
         webhook_id="The ID of the webhook to send the message through"
     )
     async def webhook_send(self, interaction: discord.Interaction, webhook_id: str) -> None:
+        """Display a modal to send a message via a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.NotFound:
@@ -423,6 +450,7 @@ class Webhook(commands.Cog):
     async def webhook_edit_name(
             self, interaction: discord.Interaction, webhook_id: str, name: str
     ) -> None:
+        """Change the name of a specific webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
@@ -457,6 +485,7 @@ class Webhook(commands.Cog):
     async def webhook_edit_avatar(
             self, interaction: discord.Interaction, webhook_id: str, avatar: discord.Attachment
     ) -> None:
+        """Change the avatar of a specific webhook."""
         await interaction.response.defer(ephemeral=True)
         avatar_bytes = await avatar.read() # Read the file content once
         kind = filetype.guess(avatar_bytes) # Validate MIME type using magic bytes
@@ -501,6 +530,7 @@ class Webhook(commands.Cog):
             discord.StageChannel, discord.VoiceChannel
         ]
     ) -> None:
+        """Move a webhook to a different channel."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
             # Check if it's a channel follower or application webhook
@@ -523,4 +553,5 @@ class Webhook(commands.Cog):
 
 
 async def setup(bot):
+    """Add the Webhook cog to the bot."""
     await bot.add_cog(Webhook(bot))

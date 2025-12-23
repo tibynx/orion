@@ -1,3 +1,4 @@
+"""Cog for managing bot presence and activity status."""
 from urllib.parse import urlparse
 import discord
 from discord.ext import commands
@@ -10,6 +11,7 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Presence commands for changing bot activity and status
 class Presence(commands.Cog):
+    """Cog for managing the bot's online status and activity."""
     # Status mapping for indicator command
     STATUS_MAPPING = {
         "online": discord.Status.online,
@@ -19,6 +21,7 @@ class Presence(commands.Cog):
     }
 
     def __init__(self, bot):
+        """Initialize the cog with the bot instance."""
         self.bot = bot
         self.current_status = discord.Status.online  # Default status
         self.current_activity: discord.BaseActivity | None = None  # Track current activity
@@ -27,6 +30,7 @@ class Presence(commands.Cog):
     # only https Twitch/YouTube supported
     @staticmethod
     def _is_valid_stream_url(url: str) -> bool:
+        """Verify if the provided URL is valid."""
         try:
             parsed = urlparse(url)
             if parsed.scheme != "https":
@@ -67,6 +71,7 @@ class Presence(commands.Cog):
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.guild_only()
     async def activity_clear(self, interaction: discord.Interaction):
+        """Reset the bot's activity and status to default."""
         # Set status to online, clear activity
         self.current_activity = None
         self.current_status = discord.Status.online
@@ -99,6 +104,7 @@ class Presence(commands.Cog):
     async def activity_indicator(
             self, interaction: discord.Interaction, status: app_commands.Choice[str]
     ):
+        """Update the bot's status indicator."""
         # Set the new status, keep current activity
         self.current_status = self.STATUS_MAPPING[status.value]
         await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
@@ -121,6 +127,7 @@ class Presence(commands.Cog):
     async def activity_streaming(
             self, interaction: discord.Interaction, title: str, url: str, description: str = None
     ):
+        """Update the bot's activity to streaming."""
         # Check for valid URL, only https Twitch and YouTube is supported
         if not self._is_valid_stream_url(url):
             await interaction.response.send_message(
@@ -151,6 +158,7 @@ class Presence(commands.Cog):
     async def activity_custom(
             self, interaction: discord.Interaction, title: str
     ):
+        """Update the bot's activity to a custom status."""
         self.current_activity = discord.CustomActivity(name=title)
         await self.bot.change_presence(status=self.current_status, activity=self.current_activity)
         await interaction.response.send_message(
@@ -171,6 +179,7 @@ class Presence(commands.Cog):
     async def activity_playing(
             self, interaction: discord.Interaction, title: str, description: str = None
     ):
+        """Update the bot's activity to playing."""
         self.current_activity = discord.Activity(
             type=discord.ActivityType.playing, name=title, state=description
         )
@@ -193,6 +202,7 @@ class Presence(commands.Cog):
     async def activity_listening(
             self, interaction: discord.Interaction, title: str, description: str = None
     ):
+        """Update the bot's activity to listening."""
         self.current_activity = discord.Activity(
             type=discord.ActivityType.listening, name=title, state=description
         )
@@ -215,6 +225,7 @@ class Presence(commands.Cog):
     async def activity_watching(
             self, interaction: discord.Interaction, title: str, description: str = None
     ):
+        """Update the bot's activity to watching."""
         self.current_activity = discord.Activity(
             type=discord.ActivityType.watching, name=title, state=description
         )
@@ -227,4 +238,5 @@ class Presence(commands.Cog):
 
 
 async def setup(bot):
+    """Add the Presence cog to the bot."""
     await bot.add_cog(Presence(bot))

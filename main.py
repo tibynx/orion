@@ -1,3 +1,4 @@
+"""Main entry point for the Discord bot."""
 import logging
 import os
 import discord
@@ -32,7 +33,9 @@ logger.addHandler(log_handler)
 
 
 class DiscordBot(commands.Bot):
+    """Discord bot class with logging and setup logic."""
     def __init__(self) -> None:
+        """Initialize the bot with default intents and logging."""
         # No prefix since we use app commands
         super().__init__(command_prefix="", intents=intents)
         self.logger = logger
@@ -40,6 +43,7 @@ class DiscordBot(commands.Bot):
 
     # Load cogs
     async def load_cogs(self) -> None:
+        """Dynamically load all extension modules in the cogs directory."""
         for file in os.listdir(os.path.join(os.path.realpath(os.path.dirname(__file__)), "cogs")):
             if file.endswith(".py"): # Only load python files
                 extension = file[:-3]
@@ -54,6 +58,7 @@ class DiscordBot(commands.Bot):
 
 
     async def setup_hook(self) -> None:
+        """Perform initial setup, including loading cogs and syncing commands."""
         self.logger.info(
             "Logged in as %s#%s (ID: %s)", self.user.name, self.user.discriminator, self.user.id
         )
@@ -72,6 +77,7 @@ class DiscordBot(commands.Bot):
 
     # Log guild join
     async def on_guild_join(self, guild: discord.Guild) -> None:
+        """Log information when the bot joins a new guild."""
         self.logger.info(
             "Joined guild '%s' (ID: %s) with %d member(s), the guild owner is %s (ID: %s)",
             guild.name, guild.id, len(guild.members), guild.owner, guild.owner.id
@@ -79,6 +85,7 @@ class DiscordBot(commands.Bot):
 
     # Log guild leave
     async def on_guild_remove(self, guild: discord.Guild) -> None:
+        """Log information when the bot leaves a guild."""
         self.logger.info(
             "Left guild '%s' (ID: %s) with %d member(s), the guild owner is %s (ID: %s)",
             guild.name, guild.id, len(guild.members), guild.owner, guild.owner.id
@@ -88,6 +95,7 @@ class DiscordBot(commands.Bot):
     async def on_app_command_completion(
             self, interaction: discord.Interaction, command: app_commands.Command
     ) -> None:
+        """Log details of successfully executed application commands."""
         if interaction.guild is not None:
             self.logger.info(
                 "User %s (ID: %s) executed the '%s' interaction in guild '%s' (ID: %s)",
@@ -102,9 +110,11 @@ class DiscordBot(commands.Bot):
 
     # Log command errors
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
+        """Log unexpected errors occurring during event processing."""
         self.logger.exception("An error occurred in %s", event_name)
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        """Handle errors that occur during prefix command execution."""
         if isinstance(error, commands.CommandNotFound):
             return  # Ignore command not found errors
         self.logger.error("An unhandled command error occurred: %s", error)
@@ -112,6 +122,7 @@ class DiscordBot(commands.Bot):
     async def on_app_command_error(
             self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
+        """Handle errors that occur during application command execution."""
         command_name = interaction.command.name if interaction.command else "Unknown command"
 
         # Check if interaction was already responded to

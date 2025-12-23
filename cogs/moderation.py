@@ -1,3 +1,4 @@
+"""Cog for moderation commands."""
 from typing import Union
 import asyncio
 import discord
@@ -11,7 +12,9 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Moderation commands
 class Moderation(commands.Cog):
+    """Cog for moderation-related commands."""
     def __init__(self, bot):
+        """Initialize the cog with the bot instance."""
         self.bot = bot
 
 
@@ -37,6 +40,7 @@ class Moderation(commands.Cog):
                 discord.StageChannel
             ] = None
     ):
+        """Purge a specified number of messages from a channel."""
         await interaction.response.defer(ephemeral=True)  # Defer response
         try:
             if channel is None:
@@ -69,6 +73,7 @@ class Moderation(commands.Cog):
                 discord.StageChannel
             ] = None
     ):
+        """Purge all pinned messages from a channel."""
         await interaction.response.defer(ephemeral=True) # Defer response
         try:
             if channel is None:
@@ -95,4 +100,5 @@ class Moderation(commands.Cog):
 
 
 async def setup(bot):
+    """Add the Moderation cog to the bot."""
     await bot.add_cog(Moderation(bot))

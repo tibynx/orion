@@ -1,3 +1,4 @@
+"""Cog for managing threads."""
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -9,7 +10,9 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 # Create a modal for creating a new thread
 class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
+    """Modal for defining thread name and first message."""
     def __init__(self, message: discord.Message):
+        """Initialize the modal with the base message."""
         super().__init__()
         self.message = message
 
@@ -28,6 +31,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        """Create the thread and send the first message upon submission."""
         await interaction.response.defer(ephemeral=True)
         # Create the thread from the message
         thread = await self.message.create_thread(
@@ -41,6 +45,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during thread creation."""
         if isinstance(error, discord.Forbidden):
             msg = f"{ERROR_EMOJI} I don't have permission to create threads or send messages here."
         elif isinstance(error, discord.NotFound):
@@ -58,7 +63,9 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
 
 # Thread management commands
 class Threads(commands.Cog):
+    """Cog for thread management commands."""
     def __init__(self, bot):
+        """Initialize the cog with the bot instance."""
         self.bot = bot
 
         # Context menu command for creating a new thread
@@ -72,6 +79,7 @@ class Threads(commands.Cog):
     async def _get_thread(
             self, interaction: discord.Interaction, thread_id: str | None = None
     ) -> discord.Thread | None:
+        """Resolve a thread from context or provided ID."""
         # Get a thread from the current channel or by its ID.
         # If used inside a thread, return it directly
         if isinstance(interaction.channel, discord.Thread):
@@ -115,6 +123,7 @@ class Threads(commands.Cog):
     async def thread_create_callback(
             self, interaction: discord.Interaction, message: discord.Message
     ) -> None:
+        """Display a modal to create a thread from a message."""
         # Check if the channel type supports threads
         if not isinstance(message.channel, (discord.TextChannel, discord.ForumChannel)):
             await interaction.response.send_message(
@@ -143,6 +152,7 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to close (optional if used inside a thread)"
     )
     async def thread_close(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+        """Close a thread."""
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -173,6 +183,7 @@ class Threads(commands.Cog):
     async def thread_rename(
             self, interaction: discord.Interaction, name: str, thread_id: str = None
     ) -> None:
+        """Rename a thread."""
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -219,6 +230,7 @@ class Threads(commands.Cog):
             self, interaction: discord.Interaction,
             duration: discord.app_commands.Choice[int], thread_id: str = None
     ) -> None:
+        """Set slowmode for a thread."""
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -246,6 +258,7 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to lock (optional if used inside a thread)"
     )
     async def thread_lock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+        """Lock a thread."""
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -273,6 +286,7 @@ class Threads(commands.Cog):
         thread_id="The ID of the thread to unlock (optional if used inside a thread)"
     )
     async def thread_unlock(self, interaction: discord.Interaction, thread_id: str = None) -> None:
+        """Unlock a thread."""
         thread = await self._get_thread(interaction, thread_id)
         if thread is None:
             return
@@ -291,4 +305,5 @@ class Threads(commands.Cog):
 
 
 async def setup(bot):
+    """Add the Threads cog to the bot."""
     await bot.add_cog(Threads(bot))
