@@ -19,7 +19,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
         required=True,
         max_length=200, # Character limit for thread names
     )
-    first_message = discord.ui.TextInput(  # Renamed from 'message' to 'first_message'
+    first_message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
         placeholder="Enter the first message of the thread.",
@@ -28,6 +28,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
     )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
         # Create the thread from the message
         thread = await self.message.create_thread(
             name=self.name.value,
@@ -35,16 +36,24 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
         )
         # Send the first message in the thread
         await thread.send(content=self.first_message.value)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"{SUCCESS_EMOJI} Thread created successfully.",
             ephemeral=True
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.Forbidden):
-            await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to create threads in this channel.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} I don't have permission to create threads or send messages here."
+        elif isinstance(error, discord.NotFound):
+            msg = f"{ERROR_EMOJI} The original message or channel is no longer available."
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+
 
 
 # Thread management commands

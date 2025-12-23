@@ -31,17 +31,20 @@ class WebhookSendModal(discord.ui.Modal):
             f"{SUCCESS_EMOJI} Message sent successfully.",
             ephemeral=True
         )
+
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} The specified webhook cannot be found.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} I don't have permission to send messages with this webhook.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} I don`t have permission to send messages with this webhook."
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
 
 
 # Webhook deletion dialog

@@ -36,15 +36,17 @@ class MessageModal(discord.ui.Modal):
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} The specified channel cannot be found.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} The specified channel cannot be found."
         elif isinstance(error, discord.Forbidden):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} I don't have permission to send messages to this channel.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} I do not have permission to send messages to this channel."
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
 
 
 # Modal for sending a direct message to a user
@@ -71,16 +73,18 @@ class DmModal(discord.ui.Modal):
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} This user is no longer available.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} This user is no longer available."
         elif isinstance(error, discord.Forbidden):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
-                "They might have DMs disabled.",
-                ephemeral=True
-            )
+            msg = (f"{ERROR_EMOJI} Cannot send message to {self.user.mention}. "
+                   f"They might have DMs disabled.")
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
 
 
 # Modal for replying to a message
@@ -106,15 +110,17 @@ class ReplyModal(discord.ui.Modal):
         )
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         if isinstance(error, discord.NotFound):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} This message is no longer available.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} This message is no longer available."
         elif isinstance(error, discord.Forbidden):
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} I don't have permission to reply to this message.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} I do not have permission to reply to this message."
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
 
 
 # Message commands
