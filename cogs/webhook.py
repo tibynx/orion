@@ -294,23 +294,32 @@ class Webhook(commands.Cog):
         ],
         name: str
     ) -> None:
-        webhook = await channel.create_webhook(name=name)
-        embed = discord.Embed(
-            title=webhook.name,
-            color=None,
-            description=f"🕔 Created at <t:{int(webhook.created_at.timestamp())}:R> "
-                        f"by {webhook.user.mention}"
-        )
-        embed.add_field(name="Channel", value=webhook.channel.mention, inline=True)
-        embed.add_field(name="Type", value=webhook.type.name.title(), inline=True)
-        embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
-        embed.set_thumbnail(url=webhook.display_avatar.url)
-        # We don't check if the webhook user is a bot, because it always will be
-        embed.set_footer(text="🛈  Use the /webhookedit commands to edit this webhook's details.")
-        await interaction.response.send_message(
-            f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.",
-            embed=embed, view=WebhookButtons(webhook), ephemeral=True
-        )
+        try:
+            webhook = await channel.create_webhook(name=name)
+            embed = discord.Embed(
+                title=webhook.name,
+                color=None,
+                description=f"🕔 Created at <t:{int(webhook.created_at.timestamp())}:R> "
+                            f"by {webhook.user.mention}"
+            )
+            embed.add_field(name="Channel", value=webhook.channel.mention, inline=True)
+            embed.add_field(name="Type", value=webhook.type.name.title(), inline=True)
+            embed.add_field(name="ID", value=f"`{webhook.id}`", inline=True)
+            embed.set_thumbnail(url=webhook.display_avatar.url)
+            # We don't check if the webhook user is a bot, because it always will be
+            embed.set_footer(text="🛈  Use the /webhookedit commands to edit this webhook's details.")
+            await interaction.response.send_message(
+                f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.",
+                embed=embed, view=WebhookButtons(webhook), ephemeral=True
+            )
+        except discord.HTTPException as error:
+            if error.code == 30007: # Max webhooks reached
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} This channel has reached the maximum number of webhooks.",
+                    ephemeral=True
+                )
+            else:
+                raise error
 
 
     # Delete a webhook (sends confirmation modal)
