@@ -5,9 +5,6 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
-
-
 # Create a modal for creating a new thread
 class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
     """Modal for defining thread name and first message."""

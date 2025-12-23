@@ -6,9 +6,6 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
-
-
 # Helper to check if the user is the bot itself.
 def is_self_dm(bot: commands.Bot, user: discord.User) -> bool:
     """Check if the target user is the bot itself."""

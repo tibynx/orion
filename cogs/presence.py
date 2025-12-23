@@ -6,9 +6,6 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
-
-
 # Presence commands for changing bot activity and status
 class Presence(commands.Cog):
     """Cog for managing the bot's online status and activity."""

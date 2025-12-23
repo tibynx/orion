@@ -7,7 +7,6 @@ from discord.ext import commands
 from config import BOT_TOKEN, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
 # TODO: Add a proper README.md
 # TODO: Make poetry config
 

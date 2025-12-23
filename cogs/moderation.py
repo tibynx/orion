@@ -7,9 +7,6 @@ from discord import app_commands
 from config import SUCCESS_EMOJI, ERROR_EMOJI
 
 
-# TODO: Do pylint, and fix code
-
-
 # Moderation commands
 class Moderation(commands.Cog):
     """Cog for moderation-related commands."""
