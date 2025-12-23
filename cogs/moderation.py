@@ -33,8 +33,8 @@ class Moderation(commands.Cog):
             interaction: discord.Interaction,
             number: app_commands.Range[int, 1, 1000],
             channel: Union[
-                discord.TextChannel, discord.ForumChannel,
-                discord.VoiceChannel, discord.StageChannel
+                discord.TextChannel, discord.VoiceChannel,
+                discord.StageChannel
             ] = None
     ):
         await interaction.response.defer(ephemeral=True)  # Defer response
@@ -65,8 +65,8 @@ class Moderation(commands.Cog):
             self,
             interaction: discord.Interaction,
             channel: Union[
-                discord.TextChannel, discord.ForumChannel,
-                discord.VoiceChannel, discord.StageChannel
+                discord.TextChannel, discord.VoiceChannel,
+                discord.StageChannel
             ] = None
     ):
         await interaction.response.defer(ephemeral=True) # Defer response
