@@ -17,6 +17,7 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
         """Initialize the dialog with the current player's name."""
         super().__init__()
         self.confirmed = False
+        self.responded = asyncio.Event()
         self.current_player_name = current_player_name
 
         container = discord.ui.Container(
@@ -42,12 +43,15 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
 
     async def cancel_button_callback(self, interaction: discord.Interaction) -> None:
         """Cancel the playback and remove the dialog."""
+        self.confirmed = False
+        self.responded.set()
         await interaction.response.defer()
         await interaction.delete_original_response()
 
     async def confirm_button_callback(self, interaction: discord.Interaction) -> None:
         """Confirm the playback override."""
         self.confirmed = True
+        self.responded.set()
         await interaction.response.defer()
         await interaction.delete_original_response()
 
@@ -187,10 +191,7 @@ class Voice(commands.Cog):
             )
             # Wait for user response (timeout after 60 seconds)
             try:
-                await asyncio.wait_for(
-                    asyncio.create_task(self._wait_for_dialog_close(dialog)),
-                    timeout=60.0
-                )
+                await asyncio.wait_for(dialog.responded.wait(), timeout=60.0)
             except asyncio.TimeoutError:
                 pass
 
@@ -265,11 +266,6 @@ class Voice(commands.Cog):
             f"for {interaction.user.mention}.",
             ephemeral=True
         )
-
-    async def _wait_for_dialog_close(self, dialog: PlayConfirmationDialog):
-        """Wait for dialog to be closed."""
-        while not dialog.confirmed and dialog.is_dispatching():
-            await asyncio.sleep(0.1)
 
     @app_commands.command(
         name="pause",
