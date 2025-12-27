@@ -186,7 +186,10 @@ class Voice(commands.Cog):
         # Check if something is already playing
         if state.is_playing or state.is_paused:
             # Show confirmation dialog
-            dialog = PlayConfirmationDialog(state.current_player.display_name)
+            current_player_name = (
+                state.current_player.display_name if state.current_player else "Someone"
+            )
+            dialog = PlayConfirmationDialog(current_player_name)
             await interaction.followup.send(
                 view=dialog,
                 ephemeral=True
