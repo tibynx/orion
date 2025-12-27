@@ -14,6 +14,9 @@ Orion is a Discord server management and utility bot that provides various admin
 
 Create an application on the [Discord Developer Portal](https://discord.com/developers/applications), and copy the application ID and the bot token for later.
 
+> [!NOTE]
+> This bot intended to be used in only one server at a time. If you want to use it in multiple servers, you will need to create another bot with different bot tokens.
+
 ### Docker
 
 If you prefer, you can set up the bot using Docker.
