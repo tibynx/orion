@@ -7,10 +7,6 @@ from discord.ext import commands
 from config import BOT_TOKEN, ERROR_EMOJI
 
 
-# TODO: Add a proper README.md
-# TODO: Make poetry config
-
-
 # Set intents
 intents = discord.Intents.default()
 intents.message_content = True
