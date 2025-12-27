@@ -1,0 +1,15 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting PyNaCl
+  Downloading pynacl-1.6.1-cp38-abi3-manylinux_2_34_x86_64.whl.metadata (9.8 kB)
+Collecting cffi>=2.0.0 (from PyNaCl)
+  Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+Collecting pycparser (from cffi>=2.0.0->PyNaCl)
+  Downloading pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+Downloading pynacl-1.6.1-cp38-abi3-manylinux_2_34_x86_64.whl (1.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 131.7 MB/s eta 0:00:00
+Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (219 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 219.6/219.6 kB 61.4 MB/s eta 0:00:00
+Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 kB 32.6 MB/s eta 0:00:00
+Installing collected packages: pycparser, cffi, PyNaCl
+Successfully installed PyNaCl-1.6.1 cffi-2.0.0 pycparser-2.23

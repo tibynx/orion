@@ -10,6 +10,7 @@ from config import BOT_TOKEN, ERROR_EMOJI
 # Set intents
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 # Set up logging
 logs_dir = os.path.join(os.path.dirname(__file__), "logs")
@@ -163,8 +164,35 @@ class DiscordBot(commands.Bot):
                 ephemeral=True
             )
 
-        # Command raised an unexpected error
+        # Voice connection errors
         elif isinstance(error, app_commands.CommandInvokeError):
+            original = getattr(error, "original", error)
+            # Handle voice-related errors specifically
+            if isinstance(original, discord.ClientException):
+                self.logger.warning(
+                    "Voice client exception in interaction '%s' by user %s (ID: %s): %s",
+                    command_name, interaction.user.name, interaction.user.id, original
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} Failed to connect to the voice channel. "
+                    "I might already be connected elsewhere.",
+                    ephemeral=True
+                )
+                return
+            elif isinstance(original, discord.opus.OpusNotLoaded):
+                self.logger.error(
+                    "Opus library not loaded for interaction '%s' by user %s (ID: %s)",
+                    command_name, interaction.user.name, interaction.user.id
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} Voice functionality is not available. "
+                    "Missing required audio libraries.",
+                    ephemeral=True
+                )
+                return
+
+        # Command raised an unexpected error
+        if isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
             self.logger.error(
                 "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
