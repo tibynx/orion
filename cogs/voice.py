@@ -91,8 +91,10 @@ class Voice(commands.Cog):
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
                     os.remove(state.temp_file_path)
-                except Exception:
-                    pass
+                except (OSError, PermissionError) as error:
+                    self.bot.logger.warning(
+                        f"Failed to remove temp file {state.temp_file_path}: {error}"
+                    )
             # Cancel cleanup task if exists
             if state.cleanup_task and not state.cleanup_task.done():
                 state.cleanup_task.cancel()
@@ -193,7 +195,11 @@ class Voice(commands.Cog):
             try:
                 await asyncio.wait_for(dialog.responded.wait(), timeout=60.0)
             except asyncio.TimeoutError:
-                pass
+                self.bot.logger.info(
+                    f"Play confirmation dialog timed out for user {interaction.user.name} "
+                    f"(ID: {interaction.user.id}) in guild {interaction.guild.name}"
+                )
+                return
 
             if not dialog.confirmed:
                 return
@@ -400,6 +406,20 @@ class Voice(commands.Cog):
             # Clean up if forcefully disconnected
             if state.voice_client:
                 self.cleanup_voice_state(member.guild.id)
+
+    async def cog_unload(self):
+        """Clean up resources when cog is unloaded."""
+        for guild_id in list(self.voice_states.keys()):
+            state = self.voice_states[guild_id]
+            if state.voice_client and state.voice_client.is_connected():
+                await state.voice_client.disconnect()
+            if state.cleanup_task and not state.cleanup_task.done():
+                state.cleanup_task.cancel()
+                try:
+                    await state.cleanup_task
+                except asyncio.CancelledError:
+                    pass
+            self.cleanup_voice_state(guild_id)
 
 
 async def setup(bot):

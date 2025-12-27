@@ -164,7 +164,7 @@ class DiscordBot(commands.Bot):
                 ephemeral=True
             )
 
-        # Voice connection errors
+        # Voice connection errors and other command errors
         elif isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
             # Handle voice-related errors specifically
@@ -190,10 +190,7 @@ class DiscordBot(commands.Bot):
                     ephemeral=True
                 )
                 return
-
-        # Command raised an unexpected error
-        if isinstance(error, app_commands.CommandInvokeError):
-            original = getattr(error, "original", error)
+            # Handle all other CommandInvokeError cases
             self.logger.error(
                 "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
                 "guild '%s' (ID: %s): %r",
