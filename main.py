@@ -25,8 +25,8 @@ logger = logging.getLogger("discord.app")
 logger.setLevel(logging.INFO)
 log_handler = logging.FileHandler(filename=log_filename, encoding="utf-8", mode="w")
 # Using Python's standard formatting style
-log_format = "[{asctime}] [{levelname:<8}] {name}: {message}"
-log_formatter = logging.Formatter(log_format, "%Y-%m-%d %H:%M:%S", style="{")
+LOG_FORMAT = "[{asctime}] [{levelname:<8}] {name}: {message}"
+log_formatter = logging.Formatter(LOG_FORMAT, "%Y-%m-%d %H:%M:%S", style="{")
 log_handler.setFormatter(log_formatter)
 logger.addHandler(log_handler)
 
