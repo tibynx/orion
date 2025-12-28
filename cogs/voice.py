@@ -287,6 +287,14 @@ class Voice(commands.Cog):
 
         except discord.ClientException as error:
             self.bot.logger.error(f"Failed to connect to voice channel: {error}")
+            # Check if it's a user limit error
+            error_msg = str(error).lower()
+            if "full" in error_msg or "user limit" in error_msg or "maximum" in error_msg:
+                return await interaction.followup.send(
+                    f"{ERROR_EMOJI} Cannot connect to the voice channel. "
+                    "The channel has reached its user limit.",
+                    ephemeral=True
+                )
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to connect to the voice channel.",
                 ephemeral=True
