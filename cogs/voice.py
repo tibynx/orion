@@ -114,9 +114,10 @@ class Voice(commands.Cog):
         
         state = self.get_voice_state(guild_id)
         if state.voice_client and state.voice_client.is_connected():
-            # Schedule disconnection
-            state.cleanup_task = asyncio.create_task(
-                self.disconnect_voice(state.voice_client)
+            # Schedule disconnection using bot's loop
+            asyncio.run_coroutine_threadsafe(
+                self.disconnect_voice(state.voice_client),
+                self.bot.loop
             )
 
     @staticmethod
@@ -129,7 +130,8 @@ class Voice(commands.Cog):
         valid_audio_types = {
             'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
             'audio/ogg', 'audio/flac', 'audio/x-flac', 'audio/aac', 'audio/m4a',
-            'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus'
+            'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus',
+            'video/mp4',  # M4A files are sometimes detected as video/mp4
         }
         return kind.mime in valid_audio_types
 
@@ -139,7 +141,7 @@ class Voice(commands.Cog):
     )
     @app_commands.guild_only()
     @app_commands.describe(
-        audio_file="The audio file to play"
+        audio_file="Audio file to play (MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM - max 25MB)"
     )
     async def play(
         self, interaction: discord.Interaction, audio_file: discord.Attachment
@@ -165,7 +167,7 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
-        # Download and validate the file
+        # Download and validate the file BEFORE connecting
         try:
             file_bytes = await audio_file.read()
         except Exception as error:
@@ -190,7 +192,7 @@ class Voice(commands.Cog):
                 state.current_player.display_name if state.current_player else "Someone"
             )
             dialog = PlayConfirmationDialog(current_player_name)
-            await interaction.followup.send(
+            message = await interaction.followup.send(
                 view=dialog,
                 ephemeral=True
             )
@@ -201,6 +203,10 @@ class Voice(commands.Cog):
                 self.bot.logger.info(
                     f"Play confirmation dialog timed out for user {interaction.user.name} "
                     f"(ID: {interaction.user.id}) in guild {interaction.guild.name}"
+                )
+                await message.edit(
+                    content=f"{ERROR_EMOJI} Confirmation timed out. Please try again.",
+                    view=None
                 )
                 return
 
@@ -253,6 +259,13 @@ class Voice(commands.Cog):
             audio_source = discord.FFmpegPCMAudio(temp_path)
             audio_source = discord.PCMVolumeTransformer(audio_source, volume=state.current_volume)
             state.audio_source = audio_source
+        except FileNotFoundError:
+            self.bot.logger.error("FFmpeg not found")
+            await self.disconnect_voice(state.voice_client)
+            return await interaction.followup.send(
+                f"{ERROR_EMOJI} FFmpeg is not installed. Voice playback is unavailable.",
+                ephemeral=True
+            )
         except Exception as error:
             self.bot.logger.error(f"Failed to create audio source: {error}")
             await self.disconnect_voice(state.voice_client)
@@ -272,7 +285,7 @@ class Voice(commands.Cog):
 
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Now playing **{audio_file.filename}** "
-            f"for {interaction.user.mention}.",
+            f"in {user_channel.mention}.",
             ephemeral=True
         )
 
@@ -288,6 +301,13 @@ class Voice(commands.Cog):
         if not state.voice_client or not state.voice_client.is_connected():
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} I'm not connected to a voice channel.",
+                ephemeral=True
+            )
+
+        # Check if user is in the same voice channel
+        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
                 ephemeral=True
             )
 
@@ -321,6 +341,13 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
+        # Check if user is in the same voice channel
+        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
+                ephemeral=True
+            )
+
         if not state.is_paused:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} Audio is not paused.",
@@ -351,6 +378,13 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
+        # Check if user is in the same voice channel
+        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
+                ephemeral=True
+            )
+
         if state.voice_client.is_playing() or state.voice_client.is_paused():
             state.voice_client.stop()
 
@@ -369,7 +403,9 @@ class Voice(commands.Cog):
     @app_commands.describe(
         volume="Volume level (0-200)"
     )
-    async def volume(self, interaction: discord.Interaction, volume: int) -> None:
+    async def volume(
+        self, interaction: discord.Interaction, volume: app_commands.Range[int, 0, 200]
+    ) -> None:
         """Adjust the volume of the current playback."""
         state = self.get_voice_state(interaction.guild_id)
 
@@ -379,9 +415,10 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
-        if volume < 0 or volume > 200:
+        # Check if user is in the same voice channel
+        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} Volume must be between 0 and 200.",
+                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
                 ephemeral=True
             )
 
