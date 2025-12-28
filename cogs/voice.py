@@ -107,6 +107,23 @@ class Voice(commands.Cog):
             await voice_client.disconnect()
             self.cleanup_voice_state(guild_id)
 
+    def check_user_in_voice_channel(
+        self, interaction: discord.Interaction, state: VoiceState
+    ) -> tuple[bool, str]:
+        """Check if user is in the same voice channel as the bot.
+        
+        Returns:
+            tuple: (is_valid, error_message) - is_valid is True if check passes,
+                   error_message is set if check fails
+        """
+        if not state.voice_client or not state.voice_client.is_connected():
+            return False, f"{ERROR_EMOJI} I'm not connected to a voice channel."
+        
+        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
+            return False, f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command."
+        
+        return True, ""
+
     def after_playback(self, guild_id: int, error):
         """Callback after playback finishes or encounters an error."""
         if error:
@@ -114,15 +131,26 @@ class Voice(commands.Cog):
         
         state = self.get_voice_state(guild_id)
         if state.voice_client and state.voice_client.is_connected():
-            # Schedule disconnection using bot's loop
-            asyncio.run_coroutine_threadsafe(
+            # Schedule disconnection using bot's loop (thread-safe)
+            future = asyncio.run_coroutine_threadsafe(
                 self.disconnect_voice(state.voice_client),
                 self.bot.loop
             )
+            # Add callback to log any exceptions
+            def handle_exception(fut):
+                try:
+                    fut.result()
+                except Exception as exc:
+                    self.bot.logger.error(f"Error during cleanup in guild {guild_id}: {exc}")
+            future.add_done_callback(handle_exception)
 
     @staticmethod
     def is_valid_audio_file(file_bytes: bytes) -> bool:
-        """Check if the file is a valid audio file using magic bytes."""
+        """Check if the file is a valid audio file using magic bytes.
+        
+        Note: M4A audio files are often detected as video/mp4 MIME type because
+        they use the MP4 container format, so video/mp4 is included in valid types.
+        """
         kind = filetype.guess(file_bytes)
         if kind is None:
             return False
@@ -131,7 +159,7 @@ class Voice(commands.Cog):
             'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
             'audio/ogg', 'audio/flac', 'audio/x-flac', 'audio/aac', 'audio/m4a',
             'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus',
-            'video/mp4',  # M4A files are sometimes detected as video/mp4
+            'video/mp4',  # M4A files use MP4 container
         }
         return kind.mime in valid_audio_types
 
@@ -298,18 +326,10 @@ class Voice(commands.Cog):
         """Pause the current audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        if not state.voice_client or not state.voice_client.is_connected():
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I'm not connected to a voice channel.",
-                ephemeral=True
-            )
-
         # Check if user is in the same voice channel
-        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
-                ephemeral=True
-            )
+        is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
+        if not is_valid:
+            return await interaction.response.send_message(error_msg, ephemeral=True)
 
         if not state.is_playing or state.is_paused:
             return await interaction.response.send_message(
@@ -335,18 +355,10 @@ class Voice(commands.Cog):
         """Resume paused audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        if not state.voice_client or not state.voice_client.is_connected():
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I'm not connected to a voice channel.",
-                ephemeral=True
-            )
-
         # Check if user is in the same voice channel
-        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
-                ephemeral=True
-            )
+        is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
+        if not is_valid:
+            return await interaction.response.send_message(error_msg, ephemeral=True)
 
         if not state.is_paused:
             return await interaction.response.send_message(
@@ -372,18 +384,10 @@ class Voice(commands.Cog):
         """Stop audio playback and disconnect from voice channel."""
         state = self.get_voice_state(interaction.guild_id)
 
-        if not state.voice_client or not state.voice_client.is_connected():
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I'm not connected to a voice channel.",
-                ephemeral=True
-            )
-
         # Check if user is in the same voice channel
-        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
-                ephemeral=True
-            )
+        is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
+        if not is_valid:
+            return await interaction.response.send_message(error_msg, ephemeral=True)
 
         if state.voice_client.is_playing() or state.voice_client.is_paused():
             state.voice_client.stop()
@@ -409,18 +413,10 @@ class Voice(commands.Cog):
         """Adjust the volume of the current playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        if not state.voice_client or not state.voice_client.is_connected():
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I'm not connected to a voice channel.",
-                ephemeral=True
-            )
-
         # Check if user is in the same voice channel
-        if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command.",
-                ephemeral=True
-            )
+        is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
+        if not is_valid:
+            return await interaction.response.send_message(error_msg, ephemeral=True)
 
         # Convert percentage to decimal
         volume_decimal = volume / 100.0
