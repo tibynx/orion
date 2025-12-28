@@ -18,6 +18,7 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
         super().__init__()
         self.confirmed = False
         self.responded = asyncio.Event()
+        self.timed_out = False
         self.current_player_name = current_player_name
 
         container = discord.ui.Container(
@@ -43,6 +44,12 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
 
     async def cancel_button_callback(self, interaction: discord.Interaction) -> None:
         """Cancel the playback and remove the dialog."""
+        if self.timed_out:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
+                ephemeral=True
+            )
+            return
         self.confirmed = False
         self.responded.set()
         await interaction.response.defer()
@@ -50,6 +57,12 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
 
     async def confirm_button_callback(self, interaction: discord.Interaction) -> None:
         """Confirm the playback override."""
+        if self.timed_out:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
+                ephemeral=True
+            )
+            return
         self.confirmed = True
         self.responded.set()
         await interaction.response.defer()
@@ -162,15 +175,25 @@ class Voice(commands.Cog):
             future.add_done_callback(self._handle_cleanup_exception(guild_id))
 
     @staticmethod
-    def is_valid_audio_file(file_bytes: bytes) -> bool:
-        """Check if the file is a valid audio file using magic bytes.
+    def is_valid_audio_file(file_bytes: bytes, filename: str) -> bool:
+        """Check if the file is a valid audio file using magic bytes and extension.
         
         Note: M4A audio files are often detected as video/mp4 MIME type because
-        they use the MP4 container format, so video/mp4 is included in valid types.
+        they use the MP4 container format. We use file extension as additional
+        validation to distinguish M4A audio from MP4 video files.
         """
         kind = filetype.guess(file_bytes)
         if kind is None:
             return False
+        
+        # Get file extension
+        file_ext = filename.lower().split('.')[-1] if '.' in filename else ''
+        
+        # For video/mp4 MIME type, only accept if extension is m4a (audio)
+        if kind.mime == 'video/mp4':
+            return file_ext == 'm4a'
+        
+        # For other MIME types, check against valid audio types
         return kind.mime in Voice.VALID_AUDIO_MIME_TYPES
 
     @app_commands.command(
@@ -216,7 +239,7 @@ class Voice(commands.Cog):
             )
 
         # Validate file type
-        if not self.is_valid_audio_file(file_bytes):
+        if not self.is_valid_audio_file(file_bytes, audio_file.filename):
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Invalid file type. Please upload a valid audio file "
                 f"({self.SUPPORTED_FORMATS}).",
@@ -238,6 +261,7 @@ class Voice(commands.Cog):
             try:
                 await asyncio.wait_for(dialog.responded.wait(), timeout=60.0)
             except asyncio.TimeoutError:
+                dialog.timed_out = True
                 self.bot.logger.info(
                     f"Play confirmation dialog timed out for user {interaction.user.name} "
                     f"(ID: {interaction.user.id}) in guild {interaction.guild.name}"
