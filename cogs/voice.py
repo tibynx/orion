@@ -72,6 +72,19 @@ class VoiceState:
 
 class Voice(commands.Cog):
     """Cog for voice channel audio playback and control."""
+    
+    # Supported audio formats
+    SUPPORTED_FORMATS = "MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM"
+    MAX_FILE_SIZE_MB = 25
+    
+    # Valid MIME types for audio files
+    VALID_AUDIO_MIME_TYPES = {
+        'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
+        'audio/ogg', 'audio/flac', 'audio/x-flac', 'audio/aac', 'audio/m4a',
+        'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus',
+        'video/mp4',  # M4A files use MP4 container
+    }
+    
     def __init__(self, bot):
         """Initialize the cog with the bot instance."""
         self.bot = bot
@@ -124,6 +137,15 @@ class Voice(commands.Cog):
         
         return True, ""
 
+    def _handle_cleanup_exception(self, guild_id: int):
+        """Create a callback function to handle exceptions from cleanup futures."""
+        def callback(fut):
+            try:
+                fut.result()
+            except Exception as exc:
+                self.bot.logger.error(f"Error during cleanup in guild {guild_id}: {exc}")
+        return callback
+
     def after_playback(self, guild_id: int, error):
         """Callback after playback finishes or encounters an error."""
         if error:
@@ -137,12 +159,7 @@ class Voice(commands.Cog):
                 self.bot.loop
             )
             # Add callback to log any exceptions
-            def handle_exception(fut):
-                try:
-                    fut.result()
-                except Exception as exc:
-                    self.bot.logger.error(f"Error during cleanup in guild {guild_id}: {exc}")
-            future.add_done_callback(handle_exception)
+            future.add_done_callback(self._handle_cleanup_exception(guild_id))
 
     @staticmethod
     def is_valid_audio_file(file_bytes: bytes) -> bool:
@@ -154,14 +171,7 @@ class Voice(commands.Cog):
         kind = filetype.guess(file_bytes)
         if kind is None:
             return False
-        # Common audio MIME types
-        valid_audio_types = {
-            'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
-            'audio/ogg', 'audio/flac', 'audio/x-flac', 'audio/aac', 'audio/m4a',
-            'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus',
-            'video/mp4',  # M4A files use MP4 container
-        }
-        return kind.mime in valid_audio_types
+        return kind.mime in Voice.VALID_AUDIO_MIME_TYPES
 
     @app_commands.command(
         name="play",
@@ -169,7 +179,7 @@ class Voice(commands.Cog):
     )
     @app_commands.guild_only()
     @app_commands.describe(
-        audio_file="Audio file to play (MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM - max 25MB)"
+        audio_file=f"Audio file to play ({Voice.SUPPORTED_FORMATS} - max {Voice.MAX_FILE_SIZE_MB}MB)"
     )
     async def play(
         self, interaction: discord.Interaction, audio_file: discord.Attachment
@@ -209,7 +219,7 @@ class Voice(commands.Cog):
         if not self.is_valid_audio_file(file_bytes):
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Invalid file type. Please upload a valid audio file "
-                "(MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM).",
+                f"({self.SUPPORTED_FORMATS}).",
                 ephemeral=True
             )
 
@@ -288,10 +298,10 @@ class Voice(commands.Cog):
             audio_source = discord.PCMVolumeTransformer(audio_source, volume=state.current_volume)
             state.audio_source = audio_source
         except FileNotFoundError:
-            self.bot.logger.error("FFmpeg not found")
+            self.bot.logger.error("FFmpeg not found or not in PATH")
             await self.disconnect_voice(state.voice_client)
             return await interaction.followup.send(
-                f"{ERROR_EMOJI} FFmpeg is not installed. Voice playback is unavailable.",
+                f"{ERROR_EMOJI} FFmpeg not found or not accessible. Voice playback is unavailable.",
                 ephemeral=True
             )
         except Exception as error:
