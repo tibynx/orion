@@ -179,7 +179,7 @@ class Voice(commands.Cog):
     )
     @app_commands.guild_only()
     @app_commands.describe(
-        audio_file=f"Audio file to play ({Voice.SUPPORTED_FORMATS} - max {Voice.MAX_FILE_SIZE_MB}MB)"
+        audio_file="Audio file to play (MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM - max 25MB)"
     )
     async def play(
         self, interaction: discord.Interaction, audio_file: discord.Attachment
