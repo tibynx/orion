@@ -274,9 +274,12 @@ class Voice(commands.Cog):
                     f"Play confirmation dialog timed out for user {interaction.user.name} "
                     f"(ID: {interaction.user.id}) in guild {interaction.guild.name}"
                 )
-                await message.edit(
-                    content=f"{ERROR_EMOJI} Confirmation timed out. Please try again.",
-                    view=None
+                # Delete the dialog message and send a followup instead of editing
+                # LayoutView messages can't be edited to plain text properly
+                await message.delete()
+                await interaction.followup.send(
+                    f"{ERROR_EMOJI} Confirmation timed out. Please try again.",
+                    ephemeral=True
                 )
                 return
 
@@ -306,9 +309,17 @@ class Voice(commands.Cog):
         try:
             if state.voice_client and state.voice_client.is_connected():
                 if state.voice_client.channel != user_channel:
-                    await state.voice_client.move_to(user_channel)
+                    # Add timeout to prevent hanging
+                    await asyncio.wait_for(
+                        state.voice_client.move_to(user_channel),
+                        timeout=10.0
+                    )
             else:
-                state.voice_client = await user_channel.connect()
+                # Add timeout to prevent hanging
+                state.voice_client = await asyncio.wait_for(
+                    user_channel.connect(),
+                    timeout=10.0
+                )
 
             # If it's a stage channel, try to become a speaker
             if isinstance(user_channel, discord.StageChannel):
@@ -317,6 +328,19 @@ class Voice(commands.Cog):
                 except discord.Forbidden:
                     pass  # Already a speaker or no permission
 
+        except asyncio.TimeoutError:
+            self.bot.logger.error(f"Connection to voice channel timed out")
+            # Clean up temp file since we won't be playing it
+            if state.temp_file_path and os.path.exists(state.temp_file_path):
+                try:
+                    os.remove(state.temp_file_path)
+                    state.temp_file_path = None
+                except (OSError, PermissionError) as cleanup_error:
+                    self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
+            return await interaction.followup.send(
+                f"{ERROR_EMOJI} Connection to voice channel timed out. The channel may be unavailable.",
+                ephemeral=True
+            )
         except discord.ClientException as error:
             self.bot.logger.error(f"Failed to connect to voice channel: {error}")
             # Clean up temp file since we won't be playing it
