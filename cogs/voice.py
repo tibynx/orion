@@ -96,7 +96,6 @@ class Voice(commands.Cog):
     
     # Supported audio formats
     SUPPORTED_FORMATS = "MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM"
-    MAX_FILE_SIZE_MB = 25
     
     # Valid MIME types for audio files
     VALID_AUDIO_MIME_TYPES = {
@@ -194,8 +193,8 @@ class Voice(commands.Cog):
         if kind is None:
             return False
         
-        # Get file extension
-        file_ext = filename.lower().split('.')[-1] if '.' in filename else ''
+        # Get file extension using os.path.splitext for reliability
+        file_ext = os.path.splitext(filename.lower())[1].lstrip('.')
         
         # For video/mp4 MIME type, only accept if extension is m4a (audio)
         if kind.mime == 'video/mp4':
@@ -286,12 +285,25 @@ class Voice(commands.Cog):
             if not dialog.confirmed:
                 return
 
-            # Stop current playback
+            # Stop current playback and update state
             if state.voice_client and state.voice_client.is_playing():
                 state.voice_client.stop()
+            state.is_playing = False
+            state.is_paused = False
 
         # Save file to temp location
         try:
+            # Clean up any existing temp file before creating a new one
+            # (only if it's not currently being played)
+            if state.temp_file_path and os.path.exists(state.temp_file_path):
+                # Only clean up if not currently playing
+                if not (state.voice_client and state.voice_client.is_playing()):
+                    try:
+                        os.remove(state.temp_file_path)
+                        state.temp_file_path = None
+                    except (OSError, PermissionError) as cleanup_error:
+                        self.bot.logger.warning(f"Failed to remove old temp file: {cleanup_error}")
+            
             # Create temp file with proper extension
             file_ext = os.path.splitext(audio_file.filename)[1] or '.mp3'
             temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext)
