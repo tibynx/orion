@@ -330,6 +330,13 @@ class Voice(commands.Cog):
 
         except asyncio.TimeoutError:
             self.bot.logger.error(f"Connection to voice channel timed out")
+            # Terminate the voice handshake if it's still in progress
+            if state.voice_client:
+                try:
+                    await state.voice_client.disconnect(force=True)
+                except Exception as disconnect_error:
+                    self.bot.logger.warning(f"Error disconnecting after timeout: {disconnect_error}")
+                state.voice_client = None
             # Clean up temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
