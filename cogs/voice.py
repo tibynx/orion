@@ -344,10 +344,13 @@ class Voice(commands.Cog):
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            return await interaction.followup.send(
+            # Use followup.send with wait=False to ensure message is delivered even after dialog
+            await interaction.followup.send(
                 f"{ERROR_EMOJI} Connection to voice channel timed out. The channel may be unavailable.",
-                ephemeral=True
+                ephemeral=True,
+                wait=False
             )
+            return
         except discord.ClientException as error:
             self.bot.logger.error(f"Failed to connect to voice channel: {error}")
             # Clean up temp file since we won't be playing it
@@ -360,15 +363,21 @@ class Voice(commands.Cog):
             # Check if it's a user limit error
             error_msg = str(error).lower()
             if "full" in error_msg or "user limit" in error_msg or "maximum" in error_msg:
-                return await interaction.followup.send(
+                # Use followup.send with wait=False to ensure message is delivered even after dialog
+                await interaction.followup.send(
                     f"{ERROR_EMOJI} Cannot connect to the voice channel. "
                     "The channel has reached its user limit.",
-                    ephemeral=True
+                    ephemeral=True,
+                    wait=False
                 )
-            return await interaction.followup.send(
-                f"{ERROR_EMOJI} Failed to connect to the voice channel.",
-                ephemeral=True
-            )
+            else:
+                # Use followup.send with wait=False to ensure message is delivered even after dialog
+                await interaction.followup.send(
+                    f"{ERROR_EMOJI} Failed to connect to the voice channel.",
+                    ephemeral=True,
+                    wait=False
+                )
+            return
         except Exception as error:
             self.bot.logger.error(f"Unexpected error connecting to voice channel: {error}")
             # Clean up temp file since we won't be playing it
@@ -378,10 +387,13 @@ class Voice(commands.Cog):
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            return await interaction.followup.send(
+            # Use followup.send with wait=False to ensure message is delivered even after dialog
+            await interaction.followup.send(
                 f"{ERROR_EMOJI} An unexpected error occurred while connecting to the voice channel.",
-                ephemeral=True
+                ephemeral=True,
+                wait=False
             )
+            return
 
         # Create audio source with volume control
         try:
