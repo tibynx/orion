@@ -45,12 +45,14 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
     async def cancel_button_callback(self, interaction: discord.Interaction) -> None:
         """Cancel the playback and remove the dialog."""
         if self.timed_out:
-            # Check if the interaction was already responded to
-            if not interaction.response.is_done():
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
-                    ephemeral=True
-                )
+            # Defer, delete the original dialog, then send followup
+            # This pattern works with components v2 (LayoutView)
+            await interaction.response.defer()
+            await interaction.delete_original_response()
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
+                ephemeral=True
+            )
             return
         self.confirmed = False
         self.responded.set()
@@ -60,12 +62,14 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
     async def confirm_button_callback(self, interaction: discord.Interaction) -> None:
         """Confirm the playback override."""
         if self.timed_out:
-            # Check if the interaction was already responded to
-            if not interaction.response.is_done():
-                await interaction.response.send_message(
-                    f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
-                    ephemeral=True
-                )
+            # Defer, delete the original dialog, then send followup
+            # This pattern works with components v2 (LayoutView)
+            await interaction.response.defer()
+            await interaction.delete_original_response()
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
+                ephemeral=True
+            )
             return
         self.confirmed = True
         self.responded.set()
@@ -332,6 +336,19 @@ class Voice(commands.Cog):
                 )
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to connect to the voice channel.",
+                ephemeral=True
+            )
+        except Exception as error:
+            self.bot.logger.error(f"Unexpected error connecting to voice channel: {error}")
+            # Clean up temp file since we won't be playing it
+            if state.temp_file_path and os.path.exists(state.temp_file_path):
+                try:
+                    os.remove(state.temp_file_path)
+                    state.temp_file_path = None
+                except (OSError, PermissionError) as cleanup_error:
+                    self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
+            return await interaction.followup.send(
+                f"{ERROR_EMOJI} An unexpected error occurred while connecting to the voice channel.",
                 ephemeral=True
             )
 
