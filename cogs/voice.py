@@ -503,7 +503,7 @@ class Voice(commands.Cog):
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
 
-        if not state.is_playing or state.is_paused:
+        if not (state.is_playing or state.is_paused):
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} No audio is currently playing.",
                 ephemeral=True
@@ -538,6 +538,12 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
+        # Ensure we still have a valid voice client before resuming
+        if not state.voice_client:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I am not connected to a voice channel.",
+                ephemeral=True
+            )
         state.voice_client.resume()
         state.is_paused = False
         state.is_playing = True
