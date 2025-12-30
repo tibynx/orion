@@ -336,9 +336,10 @@ class Voice(commands.Cog):
                     except (OSError, PermissionError) as cleanup_error:
                         self.bot.logger.warning(f"Failed to remove old temp file: {cleanup_error}")
             
-            # Create temp file with proper extension
-            file_ext = os.path.splitext(audio_file.filename)[1] or '.mp3'
-            temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext)
+            # Create temp file with proper extension for FFmpeg
+            # If no extension, let FFmpeg auto-detect the format
+            file_ext = os.path.splitext(audio_file.filename)[1]
+            temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext if file_ext else '')
             os.write(temp_fd, file_bytes)
             os.close(temp_fd)
             state.temp_file_path = temp_path
@@ -404,9 +405,13 @@ class Voice(commands.Cog):
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Check if it's a user limit error
-            error_msg = str(error).lower()
-            if "full" in error_msg or "user limit" in error_msg or "maximum" in error_msg:
+            # Check if it's a user limit error using exception type checking
+            # ClientException with specific error messages indicates channel full
+            is_user_limit_error = (
+                isinstance(error, discord.ClientException) and 
+                any(phrase in str(error).lower() for phrase in ["full", "user limit", "maximum"])
+            )
+            if is_user_limit_error:
                 # Use followup.send with wait=False to ensure message is delivered even after dialog
                 await interaction.followup.send(
                     f"{ERROR_EMOJI} Cannot connect to the voice channel. "
@@ -556,7 +561,8 @@ class Voice(commands.Cog):
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
 
-        if state.voice_client.is_playing() or state.voice_client.is_paused():
+        # Check if voice_client is still valid before attempting to stop
+        if state.voice_client and (state.voice_client.is_playing() or state.voice_client.is_paused()):
             state.voice_client.stop()
 
         await self.disconnect_voice(state.voice_client)
