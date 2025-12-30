@@ -109,6 +109,17 @@ class Voice(commands.Cog):
         """Initialize the cog with the bot instance."""
         self.bot = bot
         self.voice_states = {}  # guild_id -> VoiceState
+        
+        # Load Opus library for voice support (especially needed in Docker containers)
+        # This attempts to load the system's Opus library if not already loaded
+        if not discord.opus.is_loaded():
+            try:
+                discord.opus.load_opus()
+                self.bot.logger.info("Successfully loaded Opus library for voice support")
+            except Exception as e:
+                self.bot.logger.warning(
+                    f"Failed to load Opus library: {e}. Voice playback may not work."
+                )
 
     def get_voice_state(self, guild_id: int) -> VoiceState:
         """Get or create a voice state for a guild."""
