@@ -114,8 +114,24 @@ class Voice(commands.Cog):
         # This attempts to load the system's Opus library if not already loaded
         if not discord.opus.is_loaded():
             try:
-                discord.opus.load_opus()
-                self.bot.logger.info("Successfully loaded Opus library for voice support")
+                # Try common library names/paths for different systems
+                # Alpine Linux uses libopus.so.0, other systems may use libopus.so or opus
+                opus_libs = ['libopus.so.0', 'libopus.so', 'opus']
+                loaded = False
+                for lib_name in opus_libs:
+                    try:
+                        discord.opus.load_opus(lib_name)
+                        self.bot.logger.info(f"Successfully loaded Opus library: {lib_name}")
+                        loaded = True
+                        break
+                    except OSError:
+                        continue
+                
+                if not loaded:
+                    self.bot.logger.warning(
+                        "Failed to load Opus library. Tried: " + ", ".join(opus_libs) +
+                        ". Voice playback may not work."
+                    )
             except Exception as e:
                 self.bot.logger.warning(
                     f"Failed to load Opus library: {e}. Voice playback may not work."
