@@ -135,9 +135,14 @@ class Voice(commands.Cog):
 
     async def disconnect_voice(self, voice_client: discord.VoiceClient):
         """Disconnect from voice channel and cleanup."""
-        if voice_client and voice_client.is_connected():
+        if voice_client:
             guild_id = voice_client.guild.id
-            await voice_client.disconnect()
+            # Disconnect even if not showing as connected to ensure cleanup
+            if voice_client.is_connected():
+                await voice_client.disconnect()
+            # Clear the voice_client reference in state before cleanup
+            if guild_id in self.voice_states:
+                self.voice_states[guild_id].voice_client = None
             self.cleanup_voice_state(guild_id)
 
     def check_user_in_voice_channel(
