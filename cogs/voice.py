@@ -509,6 +509,12 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
+        # Ensure we still have a valid voice client before pausing
+        if not state.voice_client:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I am not connected to a voice channel.",
+                ephemeral=True
+            )
         state.voice_client.pause()
         state.is_paused = True
         state.is_playing = False
