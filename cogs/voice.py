@@ -433,10 +433,20 @@ class Voice(commands.Cog):
             )
 
         # Play the audio
-        state.voice_client.play(
-            audio_source,
-            after=lambda e: self.after_playback(interaction.guild_id, e)
-        )
+        try:
+            state.voice_client.play(
+                audio_source,
+                after=lambda e: self.after_playback(interaction.guild_id, e)
+            )
+        except discord.opus.OpusNotLoaded:
+            self.bot.logger.error("Opus library not found or not loaded")
+            await self.disconnect_voice(state.voice_client)
+            return await interaction.followup.send(
+                f"{ERROR_EMOJI} Opus library not found or not loaded. Voice playback is unavailable.",
+                ephemeral=True,
+                wait=False
+            )
+        
         state.is_playing = True
         state.is_paused = False
         state.current_player = interaction.user
