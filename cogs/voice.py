@@ -405,11 +405,9 @@ class Voice(commands.Cog):
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Check if it's a user limit error using exception type checking
-            # ClientException with specific error messages indicates channel full
-            is_user_limit_error = (
-                isinstance(error, discord.ClientException) and 
-                any(phrase in str(error).lower() for phrase in ["full", "user limit", "maximum"])
+            # Check if it's a user limit error based on specific error messages indicating a full channel
+            is_user_limit_error = any(
+                phrase in str(error).lower() for phrase in ["full", "user limit", "maximum"]
             )
             if is_user_limit_error:
                 # Use followup.send with wait=False to ensure message is delivered even after dialog
