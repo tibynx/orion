@@ -340,8 +340,10 @@ class Voice(commands.Cog):
             # If no extension, let FFmpeg auto-detect the format
             file_ext = os.path.splitext(audio_file.filename)[1]
             temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext if file_ext else '')
-            os.write(temp_fd, file_bytes)
-            os.close(temp_fd)
+            try:
+                os.write(temp_fd, file_bytes)
+            finally:
+                os.close(temp_fd)
             state.temp_file_path = temp_path
         except Exception as error:
             self.bot.logger.error(f"Failed to save temp file: {error}")
