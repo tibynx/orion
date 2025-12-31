@@ -7,6 +7,7 @@ Orion is a Discord server management and utility bot that provides various admin
 * Message and thread management
 * Manage webhooks
 * Send messages as the bot or using a webhook
+* Play audio files in voice channels
 * Customize bot presence and activity
 * Restrict commands using Discord's permission system
 
