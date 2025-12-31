@@ -293,7 +293,7 @@ class Voice(commands.Cog):
                 self.bot.logger.info(
                     f"Play confirmation dialog timed out for user {interaction.user.name} "
                     f"(ID: {interaction.user.id}) in guild '{interaction.guild.name}' "
-                    F"(ID: {interaction.guild.id})"
+                    f"(ID: {interaction.guild.id})"
                 )
                 # Delete the dialog message and send a followup instead of editing
                 # LayoutView messages can't be edited to plain text properly
@@ -412,7 +412,7 @@ class Voice(commands.Cog):
                 # Use followup.send with wait=False to ensure the message is delivered even after dialog
                 await interaction.followup.send(
                     f"{ERROR_EMOJI} Cannot connect to the voice channel. "
-                    "The channel has reached it's user limit.",
+                    "The channel has reached its user limit.",
                     ephemeral=True,
                     wait=False
                 )
