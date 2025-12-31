@@ -57,7 +57,7 @@ Then, you can run the bot using the `python main.py` command!
 |:-------------:|------------------------------------------------------------|
 |   BOT_TOKEN   | Your bot token. Do not share this with anyone!             |
 | SUCCESS_EMOJI | (Optional) The emoji the bot will use to indicate success. |
-|  ERROR_EMOJI  | (Optional) The emoji the bot will use in error messages.   |
+|  ERROR_EMOJI  | (Optional) The emoji the bot will use in indicate issues.  |
 
 The emoji format can be either a Unicode emoji (e.g., ✅) or a custom emoji in the format `<a:name:id>` (e.g., `<a:tick:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it.
 
