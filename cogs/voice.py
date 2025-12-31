@@ -161,7 +161,7 @@ class Voice(commands.Cog):
             del self.voice_states[guild_id]
 
     async def disconnect_voice(self, voice_client: discord.VoiceClient):
-        """Disconnect from voice channel and cleanup."""
+        """Disconnect from a voice channel and cleanup."""
         if voice_client:
             guild_id = voice_client.guild.id
             # Disconnect even if not showing as connected to ensure cleanup
@@ -175,11 +175,11 @@ class Voice(commands.Cog):
     def check_user_in_voice_channel(
         self, interaction: discord.Interaction, state: VoiceState
     ) -> tuple[bool, str]:
-        """Check if user is in the same voice channel as the bot.
+        """Check if the user is in the same voice channel as the bot.
         
         Returns:
-            tuple: (is_valid, error_message) - is_valid is True if check passes,
-                   error_message is set if check fails
+            tuple: (is_valid, error_message) - is_valid is True if the check passes,
+                   error_message is set if the check fails
         """
         if not state.voice_client or not state.voice_client.is_connected():
             return False, f"{ERROR_EMOJI} I'm not connected to a voice channel."
@@ -218,7 +218,7 @@ class Voice(commands.Cog):
     def is_valid_audio_file(file_bytes: bytes, filename: str) -> bool:
         """Check if the file is a valid audio file using magic bytes and extension.
         
-        Note: M4A audio files are often detected as video/mp4 MIME type because
+        Note: M4A audio files are often detected as a video/mp4 MIME type because
         they use the MP4 container format. We use file extension as additional
         validation to distinguish M4A audio from MP4 video files.
         """
@@ -229,7 +229,7 @@ class Voice(commands.Cog):
         # Get file extension using os.path.splitext for reliability
         file_ext = os.path.splitext(filename.lower())[1].lstrip('.')
         
-        # For video/mp4 MIME type, only accept if extension is m4a (audio)
+        # For video/mp4 MIME type, only accept if the extension is m4a (audio)
         if kind.mime == 'video/mp4':
             return file_ext == 'm4a'
         
@@ -250,7 +250,7 @@ class Voice(commands.Cog):
         """Play an audio file in the user's voice channel."""
         await interaction.response.defer(ephemeral=True)
 
-        # Check if user is in a voice channel
+        # Check if the user is in a voice channel
         if not interaction.user.voice or not interaction.user.voice.channel:
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} You must be in a voice or stage channel to use this command.",
@@ -260,7 +260,7 @@ class Voice(commands.Cog):
         user_channel = interaction.user.voice.channel
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if bot can connect to the channel
+        # Check if the bot can connect to the channel
         permissions = user_channel.permissions_for(interaction.guild.me)
         if not permissions.connect or not permissions.speak:
             return await interaction.followup.send(
@@ -278,7 +278,7 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
-        # Validate file type
+        # Validate the file type
         if not self.is_valid_audio_file(file_bytes, audio_file.filename):
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Invalid file type. Supported file types: {self.SUPPORTED_FORMATS}",
@@ -318,7 +318,7 @@ class Voice(commands.Cog):
             if not dialog.confirmed:
                 return
 
-            # Stop current playback and update state
+            # Stop current playback and update the state
             if state.voice_client and state.voice_client.is_playing():
                 state.voice_client.stop()
             state.is_playing = False
@@ -337,7 +337,7 @@ class Voice(commands.Cog):
                     except (OSError, PermissionError) as cleanup_error:
                         self.bot.logger.warning(f"Failed to remove old temp file: {cleanup_error}")
             
-            # Create temp file with proper extension for FFmpeg
+            # Create a temp file with the proper extension for FFmpeg
             # If no extension, let FFmpeg auto-detect the format
             file_ext = os.path.splitext(audio_file.filename)[1]
             temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext if file_ext else '')
@@ -353,7 +353,7 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
-        # Connect to voice channel
+        # Connect to the voice channel
         try:
             if state.voice_client and state.voice_client.is_connected():
                 if state.voice_client.channel != user_channel:
@@ -392,14 +392,14 @@ class Voice(commands.Cog):
                         f"Error disconnecting after timeout: {disconnect_error}"
                     )
                 state.voice_client = None
-            # Clean up temp file since we won't be playing it
+            # Clean up the temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
                     os.remove(state.temp_file_path)
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Use followup.send with wait=False to ensure message is delivered even after dialog
+            # Use followup.send with wait=False to ensure the message is delivered even after dialog
             await interaction.followup.send(
                 f"{ERROR_EMOJI} Connection to voice channel timed out. "
                 "The channel may be unavailable, or is full.",
@@ -409,7 +409,7 @@ class Voice(commands.Cog):
             return
         except discord.ClientException as error:
             self.bot.logger.error(f"Failed to connect to the voice channel: {error}")
-            # Clean up temp file since we won't be playing it
+            # Clean up the temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
                     os.remove(state.temp_file_path)
@@ -421,7 +421,7 @@ class Voice(commands.Cog):
                 phrase in str(error).lower() for phrase in ["full", "user limit", "maximum"]
             )
             if is_user_limit_error:
-                # Use followup.send with wait=False to ensure message is delivered even after dialog
+                # Use followup.send with wait=False to ensure the message is delivered even after dialog
                 await interaction.followup.send(
                     f"{ERROR_EMOJI} Cannot connect to the voice channel. "
                     "The channel has reached it's user limit.",
@@ -429,7 +429,7 @@ class Voice(commands.Cog):
                     wait=False
                 )
             else:
-                # Use followup.send with wait=False to ensure message is delivered even after dialog
+                # Use followup.send with wait=False to ensure the message is delivered even after dialog
                 await interaction.followup.send(
                     f"{ERROR_EMOJI} Failed to connect to the voice channel.",
                     ephemeral=True,
@@ -438,14 +438,14 @@ class Voice(commands.Cog):
             return
         except Exception as error:
             self.bot.logger.error(f"Unexpected error connecting to voice channel: {error}")
-            # Clean up temp file since we won't be playing it
+            # Clean up the temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
                     os.remove(state.temp_file_path)
                     state.temp_file_path = None
                 except (OSError, PermissionError) as cleanup_error:
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Use followup.send with wait=False to ensure message is delivered even after dialog
+            # Use followup.send with wait=False to ensure the message is delivered even after dialog
             await interaction.followup.send(
                 f"{ERROR_EMOJI} An unexpected error occurred "
                 f"while connecting to the voice channel.",
@@ -454,7 +454,7 @@ class Voice(commands.Cog):
             )
             return
 
-        # Create audio source with volume control
+        # Create an audio source with volume control
         try:
             audio_source = discord.FFmpegPCMAudio(temp_path)
             audio_source = discord.PCMVolumeTransformer(audio_source, volume=state.current_volume)
@@ -508,7 +508,7 @@ class Voice(commands.Cog):
         """Pause the current audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if user is in the same voice channel
+        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
@@ -543,7 +543,7 @@ class Voice(commands.Cog):
         """Resume paused audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if user is in the same voice channel
+        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
@@ -575,10 +575,10 @@ class Voice(commands.Cog):
     )
     @app_commands.guild_only()
     async def stop(self, interaction: discord.Interaction) -> None:
-        """Stop audio playback and disconnect from voice channel."""
+        """Stop audio playback and disconnect from the voice channel."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if user is in the same voice channel
+        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
@@ -608,7 +608,7 @@ class Voice(commands.Cog):
         """Adjust the volume of the current playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if user is in the same voice channel
+        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
@@ -617,7 +617,7 @@ class Voice(commands.Cog):
         volume_decimal = volume / 100.0
         state.current_volume = volume_decimal
 
-        # Update current audio source if playing
+        # Update the current audio source if playing
         if state.audio_source and isinstance(state.audio_source, discord.PCMVolumeTransformer):
             state.audio_source.volume = volume_decimal
 
@@ -630,7 +630,7 @@ class Voice(commands.Cog):
     async def on_voice_state_update(
         self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
     ):
-        """Handle bot disconnection from voice channel."""
+        """Handle bot disconnection from the voice channel."""
         # Check if the bot was disconnected
         if member == member.guild.me and before.channel and not after.channel:
             state = self.get_voice_state(member.guild.id)
