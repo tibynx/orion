@@ -185,7 +185,8 @@ class Voice(commands.Cog):
             return False, f"{ERROR_EMOJI} I'm not connected to a voice channel."
         
         if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
-            return False, f"{ERROR_EMOJI} You must be in the same voice channel as me to use this command."
+            return False, (f"{ERROR_EMOJI} You must be in the same "
+                           "voice channel as me to use this command.")
         
         return True, ""
 
@@ -201,7 +202,7 @@ class Voice(commands.Cog):
     def after_playback(self, guild_id: int, error):
         """Callback after playback finishes or encounters an error."""
         if error:
-            self.bot.logger.error(f"Playback error in guild {guild_id}: {error}")
+            self.bot.logger.error(f"Playback error in a guild (ID: {guild_id}): {error}")
         
         state = self.get_voice_state(guild_id)
         if state.voice_client and state.voice_client.is_connected():
@@ -280,8 +281,7 @@ class Voice(commands.Cog):
         # Validate file type
         if not self.is_valid_audio_file(file_bytes, audio_file.filename):
             return await interaction.followup.send(
-                f"{ERROR_EMOJI} Invalid file type. Please upload a valid audio file "
-                f"({self.SUPPORTED_FORMATS}).",
+                f"{ERROR_EMOJI} Invalid file type. Supported file types: {self.SUPPORTED_FORMATS}",
                 ephemeral=True
             )
 
@@ -303,7 +303,8 @@ class Voice(commands.Cog):
                 dialog.timed_out = True
                 self.bot.logger.info(
                     f"Play confirmation dialog timed out for user {interaction.user.name} "
-                    f"(ID: {interaction.user.id}) in guild {interaction.guild.name}"
+                    f"(ID: {interaction.user.id}) in guild '{interaction.guild.name}' "
+                    F"(ID: {interaction.guild.id})"
                 )
                 # Delete the dialog message and send a followup instead of editing
                 # LayoutView messages can't be edited to plain text properly
@@ -376,13 +377,20 @@ class Voice(commands.Cog):
                     pass  # Already a speaker or no permission
 
         except asyncio.TimeoutError:
-            self.bot.logger.error(f"Connection to voice channel timed out")
+            self.bot.logger.error(
+                f"Connection to channel '{getattr(user_channel, 'name', 'unknown')}' "
+                f"(ID: {getattr(user_channel, 'id', 'unknown')}) has timed out in guild "
+                f"'{getattr(interaction.guild, 'name', 'unknown')}' "
+                f"(ID: {getattr(interaction.guild, 'id', 'unknown')})"
+            )
             # Terminate the voice handshake if it's still in progress
             if state.voice_client:
                 try:
                     await state.voice_client.disconnect(force=True)
                 except Exception as disconnect_error:
-                    self.bot.logger.warning(f"Error disconnecting after timeout: {disconnect_error}")
+                    self.bot.logger.warning(
+                        f"Error disconnecting after timeout: {disconnect_error}"
+                    )
                 state.voice_client = None
             # Clean up temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
@@ -393,13 +401,14 @@ class Voice(commands.Cog):
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
             # Use followup.send with wait=False to ensure message is delivered even after dialog
             await interaction.followup.send(
-                f"{ERROR_EMOJI} Connection to voice channel timed out. The channel may be unavailable.",
+                f"{ERROR_EMOJI} Connection to voice channel timed out. "
+                "The channel may be unavailable, or is full.",
                 ephemeral=True,
                 wait=False
             )
             return
         except discord.ClientException as error:
-            self.bot.logger.error(f"Failed to connect to voice channel: {error}")
+            self.bot.logger.error(f"Failed to connect to the voice channel: {error}")
             # Clean up temp file since we won't be playing it
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
@@ -415,7 +424,7 @@ class Voice(commands.Cog):
                 # Use followup.send with wait=False to ensure message is delivered even after dialog
                 await interaction.followup.send(
                     f"{ERROR_EMOJI} Cannot connect to the voice channel. "
-                    "The channel has reached its user limit.",
+                    "The channel has reached it's user limit.",
                     ephemeral=True,
                     wait=False
                 )
@@ -438,7 +447,8 @@ class Voice(commands.Cog):
                     self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
             # Use followup.send with wait=False to ensure message is delivered even after dialog
             await interaction.followup.send(
-                f"{ERROR_EMOJI} An unexpected error occurred while connecting to the voice channel.",
+                f"{ERROR_EMOJI} An unexpected error occurred "
+                f"while connecting to the voice channel.",
                 ephemeral=True,
                 wait=False
             )
@@ -453,7 +463,7 @@ class Voice(commands.Cog):
             self.bot.logger.error("FFmpeg not found or not in PATH")
             await self.disconnect_voice(state.voice_client)
             return await interaction.followup.send(
-                f"{ERROR_EMOJI} FFmpeg not found or not accessible. Voice playback is unavailable.",
+                f"{ERROR_EMOJI} Voice playback is unavailable.",
                 ephemeral=True
             )
         except Exception as error:
@@ -474,7 +484,7 @@ class Voice(commands.Cog):
             self.bot.logger.error("Opus library not found or not loaded")
             await self.disconnect_voice(state.voice_client)
             return await interaction.followup.send(
-                f"{ERROR_EMOJI} Opus library not found or not loaded. Voice playback is unavailable.",
+                f"{ERROR_EMOJI} Voice playback is unavailable.",
                 ephemeral=True,
                 wait=False
             )
