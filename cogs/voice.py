@@ -93,10 +93,8 @@ class VoiceState:
 
 class Voice(commands.Cog):
     """Cog for voice channel audio playback and control."""
-    
     # Supported audio formats
     SUPPORTED_FORMATS = "MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM"
-    
     # Valid MIME types for audio files
     VALID_AUDIO_MIME_TYPES = {
         'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
@@ -104,12 +102,10 @@ class Voice(commands.Cog):
         'audio/x-m4a', 'audio/mp4', 'audio/webm', 'audio/opus',
         'video/mp4',  # M4A files use MP4 container
     }
-    
     def __init__(self, bot):
         """Initialize the cog with the bot instance."""
         self.bot = bot
         self.voice_states = {}  # guild_id -> VoiceState
-        
         # Load Opus library for voice support (especially needed in Docker containers)
         # This attempts to load the system's Opus library if not already loaded
         if not discord.opus.is_loaded():
@@ -126,7 +122,6 @@ class Voice(commands.Cog):
                         break
                     except OSError:
                         continue
-                
                 if not loaded:
                     self.bot.logger.warning(
                         "Failed to load Opus library. Tried: " + ", ".join(opus_libs) +
@@ -183,11 +178,9 @@ class Voice(commands.Cog):
         """
         if not state.voice_client or not state.voice_client.is_connected():
             return False, f"{ERROR_EMOJI} I'm not connected to a voice channel."
-        
         if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
             return False, (f"{ERROR_EMOJI} You must be in the same "
                            "voice channel as me to use this command.")
-        
         return True, ""
 
     def _handle_cleanup_exception(self, guild_id: int):
@@ -203,7 +196,6 @@ class Voice(commands.Cog):
         """Callback after playback finishes or encounters an error."""
         if error:
             self.bot.logger.error(f"Playback error in a guild (ID: {guild_id}): {error}")
-        
         state = self.get_voice_state(guild_id)
         if state.voice_client and state.voice_client.is_connected():
             # Schedule disconnection using bot's loop (thread-safe)
@@ -225,14 +217,11 @@ class Voice(commands.Cog):
         kind = filetype.guess(file_bytes)
         if kind is None:
             return False
-        
         # Get file extension using os.path.splitext for reliability
         file_ext = os.path.splitext(filename.lower())[1].lstrip('.')
-        
         # For video/mp4 MIME type, only accept if the extension is m4a (audio)
         if kind.mime == 'video/mp4':
             return file_ext == 'm4a'
-        
         # For other MIME types, check against valid audio types
         return kind.mime in Voice.VALID_AUDIO_MIME_TYPES
 
@@ -336,7 +325,6 @@ class Voice(commands.Cog):
                         state.temp_file_path = None
                     except (OSError, PermissionError) as cleanup_error:
                         self.bot.logger.warning(f"Failed to remove old temp file: {cleanup_error}")
-            
             # Create a temp file with the proper extension for FFmpeg
             # If no extension, let FFmpeg auto-detect the format
             file_ext = os.path.splitext(audio_file.filename)[1]
@@ -488,7 +476,7 @@ class Voice(commands.Cog):
                 ephemeral=True,
                 wait=False
             )
-        
+
         state.is_playing = True
         state.is_paused = False
         state.current_player = interaction.user
