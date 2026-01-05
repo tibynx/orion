@@ -13,13 +13,20 @@ from config import SUCCESS_EMOJI, ERROR_EMOJI
 # Confirmation dialog for playing when another file is playing/paused
 class PlayConfirmationDialog(discord.ui.LayoutView):
     """View for confirming playback when another file is already playing."""
-    def __init__(self, current_player_name: str):
-        """Initialize the dialog with the current player's name."""
-        super().__init__()
-        self.confirmed = False
-        self.responded = asyncio.Event()
-        self.timed_out = False
-        self.current_player_name = current_player_name
+    def __init__(
+            self, cog: 'Voice', interaction: discord.Interaction,
+            file_bytes: bytes, filename: str
+    ):
+        """Initialize the dialog with necessary data for playback."""
+        super().__init__(timeout=60.0)
+        self.cog = cog
+        self.interaction = interaction
+        self.file_bytes = file_bytes
+        self.filename = filename
+
+        # Get the current player name for the message
+        state = cog.get_voice_state(interaction.guild_id)
+        current_player_name = state.current_player.display_name if state.current_player else "Someone"
 
         container = discord.ui.Container(
             discord.ui.TextDisplay(
@@ -28,53 +35,43 @@ class PlayConfirmationDialog(discord.ui.LayoutView):
                 "Do you want to stop their playback and play your file instead?"
             )
         )
-        # Cancel button
+        # Buttons
         cancel_button = discord.ui.Button(
             style=discord.ButtonStyle.secondary, label="Cancel"
         )
-        # Confirm button
         confirm_button = discord.ui.Button(
             style=discord.ButtonStyle.danger, label="Stop and Play"
         )
-        cancel_button.callback = self.cancel_button_callback
-        confirm_button.callback = self.confirm_button_callback
-        buttons = discord.ui.ActionRow(cancel_button, confirm_button)
-        container.add_item(buttons)
+
+        cancel_button.callback = self.cancel_callback
+        confirm_button.callback = self.confirm_callback
+
+        container.add_item(discord.ui.ActionRow(cancel_button, confirm_button))
         self.add_item(container)
 
-    async def cancel_button_callback(self, interaction: discord.Interaction) -> None:
-        """Cancel the playback and remove the dialog."""
-        if self.timed_out:
-            # Defer, delete the original dialog, then send followup
-            # This pattern works with components v2 (LayoutView)
-            await interaction.response.defer()
-            await interaction.delete_original_response()
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
-                ephemeral=True
-            )
-            return
-        self.confirmed = False
-        self.responded.set()
+    async def cancel_callback(self, interaction: discord.Interaction):
+        """Cancel override."""
         await interaction.response.defer()
         await interaction.delete_original_response()
 
-    async def confirm_button_callback(self, interaction: discord.Interaction) -> None:
-        """Confirm the playback override."""
-        if self.timed_out:
-            # Defer, delete the original dialog, then send followup
-            # This pattern works with components v2 (LayoutView)
-            await interaction.response.defer()
-            await interaction.delete_original_response()
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} This confirmation has expired. Please try the command again.",
-                ephemeral=True
-            )
-            return
-        self.confirmed = True
-        self.responded.set()
+    async def confirm_callback(self, interaction: discord.Interaction):
+        """Confirm override and start new playback."""
         await interaction.response.defer()
         await interaction.delete_original_response()
+        # Call the cog's internal play method
+        await self.cog.start_playback(
+            self.interaction,
+            self.file_bytes,
+            self.filename,
+            override=True
+        )
+
+    async def on_timeout(self):
+        """Handle timeout by deleting the dialog message."""
+        try:
+            await self.interaction.delete_original_response()
+        except discord.HTTPException:
+            pass
 
 
 class VoiceState:
@@ -83,12 +80,10 @@ class VoiceState:
         """Initialize voice state."""
         self.voice_client: Optional[discord.VoiceClient] = None
         self.current_player: Optional[discord.Member] = None
-        self.is_playing = False
-        self.is_paused = False
         self.current_volume = 0.5
         self.audio_source: Optional[discord.AudioSource] = None
         self.temp_file_path: Optional[str] = None
-        self.cleanup_task: Optional[asyncio.Task] = None
+        self.switching = False  # Flag to prevent disconnect when switching files
 
 
 class Voice(commands.Cog):
@@ -103,34 +98,33 @@ class Voice(commands.Cog):
         'video/mp4',  # M4A files use MP4 container
     }
     def __init__(self, bot):
-        """Initialize the cog with the bot instance."""
+        """Initialize the cog with the bot instance and load Opus."""
         self.bot = bot
         self.voice_states = {}  # guild_id -> VoiceState
-        # Load Opus library for voice support (especially needed in Docker containers)
-        # This attempts to load the system's Opus library if not already loaded
-        if not discord.opus.is_loaded():
+        self._load_opus()
+
+    def _load_opus(self):
+        """Load the Opus library for voice support."""
+        if discord.opus.is_loaded():
+            return
+
+        # Common library names for various platforms
+        opus_libs = [
+            'libopus.so.0',
+            'libopus.so',
+            'opus',
+            'libopus-0.x64.dll',
+            'libopus-0.x86.dll'
+        ]
+        for lib in opus_libs:
             try:
-                # Try common library names/paths for different systems
-                # Alpine Linux uses libopus.so.0, other systems may use libopus.so or opus
-                opus_libs = ['libopus.so.0', 'libopus.so', 'opus']
-                loaded = False
-                for lib_name in opus_libs:
-                    try:
-                        discord.opus.load_opus(lib_name)
-                        self.bot.logger.info(f"Successfully loaded Opus library: {lib_name}")
-                        loaded = True
-                        break
-                    except OSError:
-                        continue
-                if not loaded:
-                    self.bot.logger.warning(
-                        "Failed to load Opus library. Tried: " + ", ".join(opus_libs) +
-                        ". Voice playback may not work."
-                    )
-            except Exception as e:
-                self.bot.logger.warning(
-                    f"Failed to load Opus library: {e}. Voice playback may not work."
-                )
+                discord.opus.load_opus(lib)
+                self.bot.logger.info(f"Successfully loaded Opus: {lib}")
+                return
+            except Exception:
+                continue
+
+        self.bot.logger.warning("Failed to load Opus library. Voice playback might not work.")
 
     def get_voice_state(self, guild_id: int) -> VoiceState:
         """Get or create a voice state for a guild."""
@@ -140,8 +134,7 @@ class Voice(commands.Cog):
 
     def cleanup_voice_state(self, guild_id: int):
         """Clean up voice state for a guild."""
-        if guild_id in self.voice_states:
-            state = self.voice_states[guild_id]
+        if state := self.voice_states.pop(guild_id, None):
             # Clean up temp file if exists
             if state.temp_file_path and os.path.exists(state.temp_file_path):
                 try:
@@ -150,32 +143,20 @@ class Voice(commands.Cog):
                     self.bot.logger.warning(
                         f"Failed to remove temp file {state.temp_file_path}: {error}"
                     )
-            # Cancel cleanup task if exists
-            if state.cleanup_task and not state.cleanup_task.done():
-                state.cleanup_task.cancel()
-            del self.voice_states[guild_id]
 
     async def disconnect_voice(self, voice_client: discord.VoiceClient):
         """Disconnect from a voice channel and cleanup."""
         if voice_client:
             guild_id = voice_client.guild.id
-            # Disconnect even if not showing as connected to ensure cleanup
             if voice_client.is_connected():
                 await voice_client.disconnect()
-            # Clear the voice_client reference in state before cleanup
-            if guild_id in self.voice_states:
-                self.voice_states[guild_id].voice_client = None
+            # Ensure the state is cleaned up
             self.cleanup_voice_state(guild_id)
 
     def check_user_in_voice_channel(
         self, interaction: discord.Interaction, state: VoiceState
     ) -> tuple[bool, str]:
-        """Check if the user is in the same voice channel as the bot.
-        
-        Returns:
-            tuple: (is_valid, error_message) - is_valid is True if the check passes,
-                   error_message is set if the check fails
-        """
+        """Check if the user is in the same voice channel as the bot."""
         if not state.voice_client or not state.voice_client.is_connected():
             return False, f"{ERROR_EMOJI} I'm not connected to a voice channel."
         if not interaction.user.voice or interaction.user.voice.channel != state.voice_client.channel:
@@ -183,28 +164,24 @@ class Voice(commands.Cog):
                            "voice channel as me to use this command.")
         return True, ""
 
-    def _handle_cleanup_exception(self, guild_id: int):
-        """Create a callback function to handle exceptions from cleanup futures."""
-        def callback(fut):
-            try:
-                fut.result()
-            except Exception as exc:
-                self.bot.logger.error(f"Error during cleanup in guild {guild_id}: {exc}")
-        return callback
-
-    def after_playback(self, guild_id: int, error):
+    def after_playback(self, guild_id: int, error: Optional[Exception]):
         """Callback after playback finishes or encounters an error."""
         if error:
-            self.bot.logger.error(f"Playback error in a guild (ID: {guild_id}): {error}")
-        state = self.get_voice_state(guild_id)
+            self.bot.logger.error(f"Playback error in Guild ID {guild_id}: {error}")
+
+        state = self.voice_states.get(guild_id)
+        if not state:
+            return
+
+        if state.switching:
+            state.switching = False
+            return
+
         if state.voice_client and state.voice_client.is_connected():
-            # Schedule disconnection using bot's loop (thread-safe)
-            future = asyncio.run_coroutine_threadsafe(
+            asyncio.run_coroutine_threadsafe(
                 self.disconnect_voice(state.voice_client),
                 self.bot.loop
             )
-            # Add callback to log any exceptions
-            future.add_done_callback(self._handle_cleanup_exception(guild_id))
 
     @staticmethod
     def is_valid_audio_file(file_bytes: bytes, filename: str) -> bool:
@@ -247,9 +224,6 @@ class Voice(commands.Cog):
             )
 
         user_channel = interaction.user.voice.channel
-        state = self.get_voice_state(interaction.guild_id)
-
-        # Check if the bot can connect to the channel
         permissions = user_channel.permissions_for(interaction.guild.me)
         if not permissions.connect or not permissions.speak:
             return await interaction.followup.send(
@@ -257,235 +231,125 @@ class Voice(commands.Cog):
                 ephemeral=True
             )
 
-        # Download and validate the file BEFORE connecting
+        # Download and validate
         try:
             file_bytes = await audio_file.read()
         except Exception as error:
-            self.bot.logger.error(f"Failed to read audio file: {error}")
+            self.bot.logger.error(
+                f"Failed to read audio file in Guild ID {interaction.guild_id}: {error}"
+            )
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to download the audio file.",
                 ephemeral=True
             )
 
-        # Validate the file type
         if not self.is_valid_audio_file(file_bytes, audio_file.filename):
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Invalid file type. Supported file types: {self.SUPPORTED_FORMATS}",
                 ephemeral=True
             )
 
-        # Check if something is already playing
-        if state.is_playing or state.is_paused:
+        state = self.get_voice_state(interaction.guild_id)
+        if state.voice_client and (state.voice_client.is_playing() or state.voice_client.is_paused()):
             # Show confirmation dialog
-            current_player_name = (
-                state.current_player.display_name if state.current_player else "Someone"
-            )
-            dialog = PlayConfirmationDialog(current_player_name)
-            message = await interaction.followup.send(
-                view=dialog,
-                ephemeral=True
-            )
-            # Wait for user response (timeout after 60 seconds)
-            try:
-                await asyncio.wait_for(dialog.responded.wait(), timeout=60.0)
-            except asyncio.TimeoutError:
-                dialog.timed_out = True
-                self.bot.logger.info(
-                    f"Play confirmation dialog timed out for user {interaction.user.name} "
-                    f"(ID: {interaction.user.id}) in guild '{interaction.guild.name}' "
-                    f"(ID: {interaction.guild.id})"
-                )
-                # Delete the dialog message and send a followup instead of editing
-                # LayoutView messages can't be edited to plain text properly
-                await message.delete()
-                await interaction.followup.send(
-                    f"{ERROR_EMOJI} Confirmation timed out. Please try again.",
-                    ephemeral=True
-                )
-                return
+            view = PlayConfirmationDialog(self, interaction, file_bytes, audio_file.filename)
+            return await interaction.followup.send(view=view, ephemeral=True)
 
-            if not dialog.confirmed:
-                return
+        await self.start_playback(interaction, file_bytes, audio_file.filename)
+        return None
 
-            # Stop current playback and update the state
-            if state.voice_client and state.voice_client.is_playing():
-                state.voice_client.stop()
-            state.is_playing = False
-            state.is_paused = False
+    async def start_playback(
+        self, interaction: discord.Interaction, file_bytes: bytes,
+        filename: str, override: bool = False
+    ) -> None:
+        """Internal method to handle audio playback logic."""
+        state = self.get_voice_state(interaction.guild_id)
+        user_channel = interaction.user.voice.channel
 
-        # Save file to temp location
+        if override and state.voice_client and (state.voice_client.is_playing() or state.voice_client.is_paused()):
+            state.switching = True
+            state.voice_client.stop()
+            # Wait briefly for the audio player to stop
+            for _ in range(10):
+                if not (state.voice_client.is_playing() or state.voice_client.is_paused()):
+                    break
+                await asyncio.sleep(0.1)
+
+        # Save to a temp file
+        temp_path = None
         try:
-            # Clean up any existing temp file before creating a new one
-            # (only if it's not currently being played)
+            # Clean up old temp file if not playing
             if state.temp_file_path and os.path.exists(state.temp_file_path):
-                # Only clean up if not currently playing
                 if not (state.voice_client and state.voice_client.is_playing()):
                     try:
                         os.remove(state.temp_file_path)
-                        state.temp_file_path = None
-                    except (OSError, PermissionError) as cleanup_error:
-                        self.bot.logger.warning(f"Failed to remove old temp file: {cleanup_error}")
-            # Create a temp file with the proper extension for FFmpeg
-            # If no extension, let FFmpeg auto-detect the format
-            file_ext = os.path.splitext(audio_file.filename)[1]
-            temp_fd, temp_path = tempfile.mkstemp(suffix=file_ext if file_ext else '')
-            try:
-                os.write(temp_fd, file_bytes)
-            finally:
-                os.close(temp_fd)
+                    except (OSError, PermissionError):
+                        pass
+
+            file_ext = os.path.splitext(filename)[1]
+            fd, temp_path = tempfile.mkstemp(suffix=file_ext if file_ext else '')
+            os.write(fd, file_bytes)
+            os.close(fd)
             state.temp_file_path = temp_path
+
         except Exception as error:
-            self.bot.logger.error(f"Failed to save temp file: {error}")
+            self.bot.logger.error(f"Temp file error in Guild ID {interaction.guild_id}: {error}")
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to process the audio file.",
                 ephemeral=True
             )
 
-        # Connect to the voice channel
+        # Connect to voice
         try:
             if state.voice_client and state.voice_client.is_connected():
                 if state.voice_client.channel != user_channel:
-                    # Add timeout to prevent hanging
-                    await asyncio.wait_for(
-                        state.voice_client.move_to(user_channel),
-                        timeout=10.0
-                    )
+                    await asyncio.wait_for(state.voice_client.move_to(user_channel), timeout=10.0)
             else:
-                # Add timeout to prevent hanging
-                state.voice_client = await asyncio.wait_for(
-                    user_channel.connect(),
-                    timeout=10.0
-                )
+                state.voice_client = await asyncio.wait_for(user_channel.connect(), timeout=10.0)
 
-            # If it's a stage channel, try to become a speaker
             if isinstance(user_channel, discord.StageChannel):
                 try:
                     await interaction.guild.me.edit(suppress=False)
                 except discord.Forbidden:
-                    pass  # Already a speaker or no permission
-
-        except asyncio.TimeoutError:
+                    pass
+        except Exception as error:
             self.bot.logger.error(
-                f"Connection to channel '{getattr(user_channel, 'name', 'unknown')}' "
-                f"(ID: {getattr(user_channel, 'id', 'unknown')}) has timed out in guild "
-                f"'{getattr(interaction.guild, 'name', 'unknown')}' "
-                f"(ID: {getattr(interaction.guild, 'id', 'unknown')})"
+                f"Voice connection error in Guild ID {interaction.guild_id}: {error}"
             )
-            # Terminate the voice handshake if it's still in progress
-            if state.voice_client:
-                try:
-                    await state.voice_client.disconnect(force=True)
-                except Exception as disconnect_error:
-                    self.bot.logger.warning(
-                        f"Error disconnecting after timeout: {disconnect_error}"
-                    )
-                state.voice_client = None
-            # Clean up the temp file since we won't be playing it
-            if state.temp_file_path and os.path.exists(state.temp_file_path):
-                try:
-                    os.remove(state.temp_file_path)
-                    state.temp_file_path = None
-                except (OSError, PermissionError) as cleanup_error:
-                    self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Use followup.send with wait=False to ensure the message is delivered even after dialog
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} Connection to voice channel timed out. "
-                "The channel may be unavailable, or is full.",
-                ephemeral=True,
-                wait=False
-            )
-            return
-        except discord.ClientException as error:
-            self.bot.logger.error(f"Failed to connect to the voice channel: {error}")
-            # Clean up the temp file since we won't be playing it
-            if state.temp_file_path and os.path.exists(state.temp_file_path):
-                try:
-                    os.remove(state.temp_file_path)
-                    state.temp_file_path = None
-                except (OSError, PermissionError) as cleanup_error:
-                    self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Check if it's a user limit error based on specific error messages indicating a full channel
-            is_user_limit_error = any(
-                phrase in str(error).lower() for phrase in ["full", "user limit", "maximum"]
-            )
-            if is_user_limit_error:
-                # Use followup.send with wait=False to ensure the message is delivered even after dialog
-                await interaction.followup.send(
-                    f"{ERROR_EMOJI} Cannot connect to the voice channel. "
-                    "The channel has reached its user limit.",
-                    ephemeral=True,
-                    wait=False
-                )
-            else:
-                # Use followup.send with wait=False to ensure the message is delivered even after dialog
-                await interaction.followup.send(
-                    f"{ERROR_EMOJI} Failed to connect to the voice channel.",
-                    ephemeral=True,
-                    wait=False
-                )
-            return
-        except Exception as error:
-            self.bot.logger.error(f"Unexpected error connecting to voice channel: {error}")
-            # Clean up the temp file since we won't be playing it
-            if state.temp_file_path and os.path.exists(state.temp_file_path):
-                try:
-                    os.remove(state.temp_file_path)
-                    state.temp_file_path = None
-                except (OSError, PermissionError) as cleanup_error:
-                    self.bot.logger.warning(f"Failed to remove temp file: {cleanup_error}")
-            # Use followup.send with wait=False to ensure the message is delivered even after dialog
-            await interaction.followup.send(
-                f"{ERROR_EMOJI} An unexpected error occurred "
-                f"while connecting to the voice channel.",
-                ephemeral=True,
-                wait=False
-            )
-            return
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
 
-        # Create an audio source with volume control
-        try:
-            audio_source = discord.FFmpegPCMAudio(temp_path)
-            audio_source = discord.PCMVolumeTransformer(audio_source, volume=state.current_volume)
-            state.audio_source = audio_source
-        except FileNotFoundError:
-            self.bot.logger.error("FFmpeg not found or not in PATH")
-            await self.disconnect_voice(state.voice_client)
-            return await interaction.followup.send(
-                f"{ERROR_EMOJI} Voice playback is unavailable.",
-                ephemeral=True
-            )
-        except Exception as error:
-            self.bot.logger.error(f"Failed to create audio source: {error}")
-            await self.disconnect_voice(state.voice_client)
-            return await interaction.followup.send(
-                f"{ERROR_EMOJI} Failed to process the audio file.",
-                ephemeral=True
-            )
+            msg = f"{ERROR_EMOJI} Failed to connect to voice channel."
+            if isinstance(error, asyncio.TimeoutError):
+                msg = f"{ERROR_EMOJI} Voice connection timed out. Maybe the channel is full?"
 
-        # Play the audio
+            return await interaction.followup.send(msg, ephemeral=True)
+
+        # Play audio
         try:
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(temp_path),
+                volume=state.current_volume
+            )
+            state.audio_source = source
             state.voice_client.play(
-                audio_source,
-                after=lambda e: self.after_playback(interaction.guild_id, e)
+                source, after=lambda e: self.after_playback(interaction.guild_id, e)
             )
-        except discord.opus.OpusNotLoaded:
-            self.bot.logger.error("Opus library not found or not loaded")
+            state.current_player = interaction.user
+
+            await interaction.followup.send(
+                f"{SUCCESS_EMOJI} Playing **{filename}** in {user_channel.mention}.",
+                ephemeral=True
+            )
+        except Exception as error:
+            self.bot.logger.error(
+                f"Playback start error in Guild ID {interaction.guild_id}: {error}"
+            )
             await self.disconnect_voice(state.voice_client)
-            return await interaction.followup.send(
-                f"{ERROR_EMOJI} Voice playback is unavailable.",
-                ephemeral=True,
-                wait=False
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Failed to start playback.",
+                ephemeral=True
             )
-
-        state.is_playing = True
-        state.is_paused = False
-        state.current_player = interaction.user
-
-        await interaction.followup.send(
-            f"{SUCCESS_EMOJI} Now playing **{audio_file.filename}** "
-            f"in {user_channel.mention}.",
-            ephemeral=True
-        )
 
     @app_commands.command(
         name="pause",
@@ -496,31 +360,22 @@ class Voice(commands.Cog):
         """Pause the current audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
 
-        if not (state.is_playing or state.is_paused):
+        if not state.voice_client.is_playing():
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} No audio is currently playing.",
                 ephemeral=True
             )
 
-        # Ensure we still have a valid voice client before pausing
-        if not state.voice_client:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I am not connected to a voice channel.",
-                ephemeral=True
-            )
         state.voice_client.pause()
-        state.is_paused = True
-        state.is_playing = False
-
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Paused playback.",
             ephemeral=True
         )
+        return None
 
     @app_commands.command(
         name="resume",
@@ -531,31 +386,22 @@ class Voice(commands.Cog):
         """Resume paused audio playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
 
-        if not state.is_paused:
+        if not state.voice_client.is_paused():
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} Audio is not paused.",
                 ephemeral=True
             )
 
-        # Ensure we still have a valid voice client before resuming
-        if not state.voice_client:
-            return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I am not connected to a voice channel.",
-                ephemeral=True
-            )
         state.voice_client.resume()
-        state.is_paused = False
-        state.is_playing = True
-
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Resumed playback.",
             ephemeral=True
         )
+        return None
 
     @app_commands.command(
         name="stop",
@@ -566,37 +412,29 @@ class Voice(commands.Cog):
         """Stop audio playback and disconnect from the voice channel."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
 
-        # Check if voice_client is still valid before attempting to stop
-        if state.voice_client and (state.voice_client.is_playing() or state.voice_client.is_paused()):
-            state.voice_client.stop()
-
         await self.disconnect_voice(state.voice_client)
-
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Stopped playback and disconnected.",
             ephemeral=True
         )
+        return None
 
     @app_commands.command(
         name="volume",
         description="Adjust the playback volume (0-200%)."
     )
     @app_commands.guild_only()
-    @app_commands.describe(
-        volume="Volume level (0-200)"
-    )
+    @app_commands.describe(volume="Volume level (0-200)")
     async def volume(
         self, interaction: discord.Interaction, volume: app_commands.Range[int, 0, 200]
     ) -> None:
         """Adjust the volume of the current playback."""
         state = self.get_voice_state(interaction.guild_id)
 
-        # Check if the user is in the same voice channel
         is_valid, error_msg = self.check_user_in_voice_channel(interaction, state)
         if not is_valid:
             return await interaction.response.send_message(error_msg, ephemeral=True)
@@ -605,39 +443,29 @@ class Voice(commands.Cog):
         volume_decimal = volume / 100.0
         state.current_volume = volume_decimal
 
-        # Update the current audio source if playing
-        if state.audio_source and isinstance(state.audio_source, discord.PCMVolumeTransformer):
+        if state.audio_source:
             state.audio_source.volume = volume_decimal
 
         await interaction.response.send_message(
             f"{SUCCESS_EMOJI} Volume set to {volume}%.",
             ephemeral=True
         )
+        return None
 
     @commands.Cog.listener()
     async def on_voice_state_update(
         self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
     ):
         """Handle bot disconnection from the voice channel."""
-        # Check if the bot was disconnected
         if member == member.guild.me and before.channel and not after.channel:
-            state = self.get_voice_state(member.guild.id)
-            # Clean up if forcefully disconnected
-            if state.voice_client:
-                self.cleanup_voice_state(member.guild.id)
+            self.cleanup_voice_state(member.guild.id)
 
     async def cog_unload(self):
         """Clean up resources when cog is unloaded."""
         for guild_id in list(self.voice_states.keys()):
-            state = self.voice_states[guild_id]
-            if state.voice_client and state.voice_client.is_connected():
+            state = self.voice_states.get(guild_id)
+            if state and state.voice_client and state.voice_client.is_connected():
                 await state.voice_client.disconnect()
-            if state.cleanup_task and not state.cleanup_task.done():
-                state.cleanup_task.cancel()
-                try:
-                    await state.cleanup_task
-                except asyncio.CancelledError:
-                    pass
             self.cleanup_voice_state(guild_id)
 
 
