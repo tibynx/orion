@@ -35,6 +35,7 @@ class DiscordBot(commands.Bot):
         # No prefix since we use app commands
         super().__init__(command_prefix="", intents=intents)
         self.logger = logger
+        self.tree.on_error = self.on_app_command_error
 
 
     # Load cogs
@@ -129,7 +130,7 @@ class DiscordBot(commands.Bot):
 
 
         # User doesn't have permission to execute the command
-        if isinstance(error, (app_commands.MissingPermissions, app_commands.errors.CheckFailure)):
+        if isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
             await send_msg(
                 f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
