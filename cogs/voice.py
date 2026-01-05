@@ -207,6 +207,7 @@ class Voice(commands.Cog):
         description="Play an audio file in your current voice or stage channel."
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True, connect=True)
     @app_commands.describe(
         audio_file="Audio file to play (MP3, WAV, OGG, FLAC, AAC, M4A, OPUS, WebM - max 25MB)"
     )
@@ -356,6 +357,7 @@ class Voice(commands.Cog):
         description="Pause the currently playing audio."
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True, connect=True)
     async def pause(self, interaction: discord.Interaction) -> None:
         """Pause the current audio playback."""
         state = self.get_voice_state(interaction.guild_id)
@@ -382,6 +384,7 @@ class Voice(commands.Cog):
         description="Resume the paused audio."
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True, connect=True)
     async def resume(self, interaction: discord.Interaction) -> None:
         """Resume paused audio playback."""
         state = self.get_voice_state(interaction.guild_id)
@@ -408,6 +411,7 @@ class Voice(commands.Cog):
         description="Stop the currently playing audio and disconnect."
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True, connect=True)
     async def stop(self, interaction: discord.Interaction) -> None:
         """Stop audio playback and disconnect from the voice channel."""
         state = self.get_voice_state(interaction.guild_id)
@@ -428,6 +432,7 @@ class Voice(commands.Cog):
         description="Adjust the playback volume (0-200%)."
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True, connect=True)
     @app_commands.describe(volume="Volume level (0-200)")
     async def volume(
         self, interaction: discord.Interaction, volume: app_commands.Range[int, 0, 200]
