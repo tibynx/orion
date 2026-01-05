@@ -169,39 +169,29 @@ class DiscordBot(commands.Bot):
             original = getattr(error, "original", error)
             # Handle voice-related errors specifically
             if isinstance(original, discord.ClientException):
-                self.logger.warning(
-                    "Voice client exception in interaction '%s' by user %s (ID: %s): %s",
-                    command_name, interaction.user.name, interaction.user.id, original
-                )
                 await send_msg(
-                    f"{ERROR_EMOJI} Failed to connect to the voice channel. "
-                    "I might already be connected elsewhere.",
+                    f"{ERROR_EMOJI} Voice connection failed. I might be busy.",
                     ephemeral=True
                 )
-                return
             elif isinstance(original, discord.opus.OpusNotLoaded):
-                self.logger.error(
-                    "Opus library not loaded for interaction '%s' by user %s (ID: %s)",
-                    command_name, interaction.user.name, interaction.user.id
-                )
                 await send_msg(
                     f"{ERROR_EMOJI} Voice functionality is not available. "
                     "Missing required audio libraries.",
                     ephemeral=True
                 )
-                return
-            # Handle all other CommandInvokeError cases
-            self.logger.error(
-                "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
-                "guild '%s' (ID: %s): %r",
-                command_name, interaction.user.name, interaction.user.id,
-                interaction.guild.name, interaction.guild.id, original,
-                exc_info=(type(original), original, original.__traceback__),
-            )
-            await send_msg(
-                f"{ERROR_EMOJI} An error occurred while executing the command.",
-                ephemeral=True
-            )
+            else:
+                # Handle all other CommandInvokeError cases
+                self.logger.error(
+                    "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
+                    "guild '%s' (ID: %s): %r",
+                    command_name, interaction.user.name, interaction.user.id,
+                    interaction.guild.name, interaction.guild.id, original,
+                    exc_info=(type(original), original, original.__traceback__),
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} An error occurred while executing the command.",
+                    ephemeral=True
+                )
             return
 
         # Other errors
