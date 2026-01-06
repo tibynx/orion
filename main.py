@@ -128,18 +128,17 @@ class DiscordBot(commands.Bot):
         else:
             send_msg = interaction.response.send_message
 
-
-        # User doesn't have permission to execute the command
-        if isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
+        # Bot doesn't have permission to execute the command
+        if isinstance(error, app_commands.BotMissingPermissions):
             await send_msg(
-                f"{ERROR_EMOJI} You don't have permission to execute this command.",
+                f"{ERROR_EMOJI} I don't have permission to execute this command.",
                 ephemeral=True
             )
 
-        # Bot doesn't have permission to execute the command
-        elif isinstance(error, (app_commands.BotMissingPermissions, discord.Forbidden)):
+        # User doesn't have permission to execute the command
+        elif isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
             await send_msg(
-                f"{ERROR_EMOJI} I don't have permission to execute this command.",
+                f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
             )
 
@@ -151,25 +150,19 @@ class DiscordBot(commands.Bot):
                 ephemeral=True
             )
 
-        # Network issues or rate limiting
-        elif isinstance(error, discord.HTTPException):
-            self.logger.warning(
-                "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
-                "guild '%s' (ID: %s): %s",
-                command_name, interaction.user.name, interaction.user.id,
-                interaction.guild.name, interaction.guild.id, error
-            )
-            await send_msg(
-                f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
-                "I might have been rate limited. Please try again later.",
-                ephemeral=True
-            )
-
-        # Voice connection errors and other command errors
+        # Command raised an unexpected error
         elif isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
-            # Handle voice-related errors specifically
-            if isinstance(original, discord.ClientException):
+
+            # Bot doesn't have permission (e.g. trying to send message in a locked channel)
+            if isinstance(original, discord.Forbidden):
+                await send_msg(
+                    f"{ERROR_EMOJI} I don't have permission to execute this command.",
+                    ephemeral=True
+                )
+                
+            # Handle voice-related errors
+            elif isinstance(original, discord.ClientException):
                 await send_msg(
                     f"{ERROR_EMOJI} Voice connection failed. I might be busy.",
                     ephemeral=True
@@ -180,8 +173,22 @@ class DiscordBot(commands.Bot):
                     "Missing required audio libraries.",
                     ephemeral=True
                 )
+
+            # Network issues or rate limiting
+            elif isinstance(original, discord.HTTPException):
+                self.logger.warning(
+                    "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
+                    "guild '%s' (ID: %s): %s",
+                    command_name, interaction.user.name, interaction.user.id,
+                    interaction.guild.name, interaction.guild.id, original
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
+                    "I might have been rate limited. Please try again later.",
+                    ephemeral=True
+                )
+            # Handle all other CommandInvokeError cases
             else:
-                # Handle all other CommandInvokeError cases
                 self.logger.error(
                     "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
                     "guild '%s' (ID: %s): %r",
