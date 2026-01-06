@@ -34,6 +34,7 @@ class DiscordBot(commands.Bot):
         # No prefix since we use app commands
         super().__init__(command_prefix="", intents=intents)
         self.logger = logger
+        self.tree.on_error = self.on_app_command_error
 
 
     # Load cogs
@@ -127,17 +128,17 @@ class DiscordBot(commands.Bot):
             send_msg = interaction.response.send_message
 
 
-        # User doesn't have permission to execute the command
-        if isinstance(error, (app_commands.MissingPermissions, app_commands.errors.CheckFailure)):
+        # Bot doesn't have permission to execute the command
+        if isinstance(error, app_commands.BotMissingPermissions):
             await send_msg(
-                f"{ERROR_EMOJI} You don't have permission to execute this command.",
+                f"{ERROR_EMOJI} I don't have permission to execute this command.",
                 ephemeral=True
             )
 
-        # Bot doesn't have permission to execute the command
-        elif isinstance(error, (app_commands.BotMissingPermissions, discord.Forbidden)):
+        # User doesn't have permission to execute the command
+        elif isinstance(error, app_commands.CheckFailure):
             await send_msg(
-                f"{ERROR_EMOJI} I don't have permission to execute this command.",
+                f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
             )
 
@@ -149,34 +150,43 @@ class DiscordBot(commands.Bot):
                 ephemeral=True
             )
 
-        # Network issues or rate limiting
-        elif isinstance(error, discord.HTTPException):
-            self.logger.warning(
-                "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
-                "guild '%s' (ID: %s): %s",
-                command_name, interaction.user.name, interaction.user.id,
-                interaction.guild.name, interaction.guild.id, error
-            )
-            await send_msg(
-                f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
-                "I might have been rate limited. Please try again later.",
-                ephemeral=True
-            )
-
         # Command raised an unexpected error
         elif isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
-            self.logger.error(
-                "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
-                "guild '%s' (ID: %s): %r",
-                command_name, interaction.user.name, interaction.user.id,
-                interaction.guild.name, interaction.guild.id, original,
-                exc_info=(type(original), original, original.__traceback__),
-            )
-            await send_msg(
-                f"{ERROR_EMOJI} An error occurred while executing the command.",
-                ephemeral=True
-            )
+
+            # Bot doesn't have permission (e.g. trying to send message in a locked channel)
+            if isinstance(original, discord.Forbidden):
+                await send_msg(
+                    f"{ERROR_EMOJI} I don't have permission to execute this command.",
+                    ephemeral=True
+                )
+            
+            # Network issues or rate limiting
+            elif isinstance(original, discord.HTTPException):
+                self.logger.warning(
+                    "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
+                    "guild '%s' (ID: %s): %s",
+                    command_name, interaction.user.name, interaction.user.id,
+                    interaction.guild.name, interaction.guild.id, original
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
+                    "I might have been rate limited. Please try again later.",
+                    ephemeral=True
+                )
+            
+            else:
+                self.logger.error(
+                    "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
+                    "guild '%s' (ID: %s): %r",
+                    command_name, interaction.user.name, interaction.user.id,
+                    interaction.guild.name, interaction.guild.id, original,
+                    exc_info=(type(original), original, original.__traceback__),
+                )
+                await send_msg(
+                    f"{ERROR_EMOJI} An error occurred while executing the command.",
+                    ephemeral=True
+                )
             return
 
         # Other errors
