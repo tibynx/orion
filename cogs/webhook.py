@@ -39,9 +39,6 @@ class WebhookSendModal(discord.ui.Modal):
             msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
             msg = f"{ERROR_EMOJI} I don`t have permission to send messages with this webhook."
-        else:
-            msg = f"{ERROR_EMOJI} An unexpected error occurred."
-            raise error
 
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
@@ -265,6 +262,11 @@ class Webhook(commands.Cog):
             return await interaction.response.send_message(
                 embed=embed, view=WebhookButtons(webhook), ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to get webhook details.",
+                ephemeral=True
+            )
         except discord.NotFound:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.", ephemeral=True
@@ -283,18 +285,24 @@ class Webhook(commands.Cog):
     async def webhook_list(self, interaction: discord.Interaction) -> None:
         """List all webhooks available in the current guild."""
         await interaction.response.defer(ephemeral=True)
-        webhooks = await interaction.guild.webhooks()
-        # Check if there are no webhooks
-        if not webhooks:
+        try:
+            webhooks = await interaction.guild.webhooks()
+            # Check if there are no webhooks
+            if not webhooks:
+                return await interaction.followup.send(
+                    f"{ERROR_EMOJI} No webhooks found in this server.",
+                    ephemeral=True
+                )
+            embeds = self._build_webhook_embeds(webhooks, interaction.guild.name)
+            # Send pages sequentially to stay ephemeral per message
+            for index, embed in enumerate(embeds):
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            return None
+        except discord.Forbidden:
             return await interaction.followup.send(
-                f"{ERROR_EMOJI} No webhooks found in this server.",
+                f"{ERROR_EMOJI} I don't have permission to list webhooks.",
                 ephemeral=True
             )
-        embeds = self._build_webhook_embeds(webhooks, interaction.guild.name)
-        # Send pages sequentially to stay ephemeral per message
-        for index, embed in enumerate(embeds):
-            await interaction.followup.send(embed=embed, ephemeral=True)
-        return None
 
 
     # Create a webhook
@@ -339,6 +347,11 @@ class Webhook(commands.Cog):
                 f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.",
                 embed=embed, view=WebhookButtons(webhook), ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to create webhooks in this channel.",
+                ephemeral=True
+            )
         except discord.HTTPException as error:
             if error.code == 30007: # Max webhooks reached
                 await interaction.response.send_message(
@@ -363,14 +376,18 @@ class Webhook(commands.Cog):
         """Display a confirmation dialog to delete a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to purge messages.",
+                ephemeral=True
+            )
         except discord.NotFound:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
-            return
         await interaction.response.send_message(view=WebhookDeleteDialog(webhook), ephemeral=True)
-
+        return None
 
     # Show webhook url
     @app_commands.command(
@@ -394,8 +411,13 @@ class Webhook(commands.Cog):
             await interaction.response.send_message(
                 f"{webhook.name}: `{webhook.url}`", ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to get webhook URLs.",
+                ephemeral=True
+            )
         except discord.NotFound:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
@@ -415,6 +437,11 @@ class Webhook(commands.Cog):
         """Display a modal to send a message via a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to use webhooks.",
+                ephemeral=True
+            )
         except discord.NotFound:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
@@ -466,8 +493,13 @@ class Webhook(commands.Cog):
                 f"to **{webhook.name}** successfully.",
                 ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to edit webhooks.",
+                ephemeral=True
+            )
         except discord.NotFound:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
@@ -507,8 +539,13 @@ class Webhook(commands.Cog):
                 f"{SUCCESS_EMOJI} Webhook **{webhook.name}** avatar changed successfully.",
                 ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.followup.send(
+                f"{ERROR_EMOJI} I don't have permission to edit webhooks.",
+                ephemeral=True
+            )
         except discord.NotFound:
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
@@ -544,8 +581,13 @@ class Webhook(commands.Cog):
                 f"{SUCCESS_EMOJI} Webhook **{webhook.name}** channel updated successfully.",
                 ephemeral=True
             )
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to edit webhooks.",
+                ephemeral=True
+            )
         except discord.NotFound:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
