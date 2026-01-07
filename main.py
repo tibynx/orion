@@ -10,6 +10,7 @@ from config import BOT_TOKEN, ERROR_EMOJI
 # Set intents
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 # Set up logging
 logs_dir = os.path.join(os.path.dirname(__file__), "logs")
@@ -127,7 +128,6 @@ class DiscordBot(commands.Bot):
         else:
             send_msg = interaction.response.send_message
 
-
         # Bot doesn't have permission to execute the command
         if isinstance(error, app_commands.BotMissingPermissions):
             await send_msg(
@@ -136,7 +136,7 @@ class DiscordBot(commands.Bot):
             )
 
         # User doesn't have permission to execute the command
-        elif isinstance(error, app_commands.CheckFailure):
+        elif isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
             await send_msg(
                 f"{ERROR_EMOJI} You don't have permission to execute this command.",
                 ephemeral=True
@@ -154,13 +154,26 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
 
-            # Bot doesn't have permission (e.g. trying to send message in a locked channel)
+            # Bot doesn't have permission (e.g., trying to send a message in a locked channel)
             if isinstance(original, discord.Forbidden):
                 await send_msg(
                     f"{ERROR_EMOJI} I don't have permission to execute this command.",
                     ephemeral=True
                 )
-            
+
+            # Handle voice-related errors
+            elif isinstance(original, discord.ClientException):
+                await send_msg(
+                    f"{ERROR_EMOJI} Voice connection failed. I might be busy.",
+                    ephemeral=True
+                )
+            elif isinstance(original, discord.opus.OpusNotLoaded):
+                await send_msg(
+                    f"{ERROR_EMOJI} Voice functionality is not available. "
+                    "Missing required audio libraries.",
+                    ephemeral=True
+                )
+
             # Network issues or rate limiting
             elif isinstance(original, discord.HTTPException):
                 self.logger.warning(
@@ -174,7 +187,7 @@ class DiscordBot(commands.Bot):
                     "I might have been rate limited. Please try again later.",
                     ephemeral=True
                 )
-            
+            # Handle all other CommandInvokeError cases
             else:
                 self.logger.error(
                     "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
