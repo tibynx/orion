@@ -154,13 +154,13 @@ class DiscordBot(commands.Bot):
         elif isinstance(error, app_commands.CommandInvokeError):
             original = getattr(error, "original", error)
 
-            # Bot doesn't have permission (e.g. trying to send message in a locked channel)
+            # Bot doesn't have permission (e.g., trying to send a message in a locked channel)
             if isinstance(original, discord.Forbidden):
                 await send_msg(
                     f"{ERROR_EMOJI} I don't have permission to execute this command.",
                     ephemeral=True
                 )
-                
+
             # Handle voice-related errors
             elif isinstance(original, discord.ClientException):
                 await send_msg(
