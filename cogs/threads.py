@@ -185,11 +185,11 @@ class Threads(commands.Cog):
         if thread is None:
             return
         try:
+            await thread.edit(name=name)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been renamed to: **{name}**",
                 ephemeral=True
             )
-            await thread.edit(name=name)
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to rename this thread.",
@@ -232,11 +232,11 @@ class Threads(commands.Cog):
         if thread is None:
             return
         try:
+            await thread.edit(slowmode_delay=duration.value)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread slowmode set to: **{duration.name}**",
                 ephemeral=True
             )
-            await thread.edit(slowmode_delay=duration.value)
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to set slowmode for this thread.",
@@ -260,11 +260,11 @@ class Threads(commands.Cog):
         if thread is None:
             return
         try:
+            await thread.edit(locked=True)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been locked.",
                 ephemeral=True
             )
-            await thread.edit(locked=True)
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to lock this thread.",
@@ -288,11 +288,11 @@ class Threads(commands.Cog):
         if thread is None:
             return
         try:
+            await thread.edit(locked=False)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Thread has been unlocked.",
                 ephemeral=True
             )
-            await thread.edit(locked=False)
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to unlock this thread.",
