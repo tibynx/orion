@@ -95,6 +95,54 @@ class Moderation(commands.Cog):
             )
 
 
+    # Set slowmode for a channel
+    @app_commands.command(
+        name="slowmode",
+        description="Set the slowmode for a channel. Defaults to the current channel."
+    )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_channels=True)
+    @app_commands.choices(duration=[
+        discord.app_commands.Choice(name="off", value=0),
+        discord.app_commands.Choice(name="3 seconds", value=3),
+        discord.app_commands.Choice(name="5 seconds", value=5),
+        discord.app_commands.Choice(name="10 seconds", value=10),
+        discord.app_commands.Choice(name="15 seconds", value=15),
+        discord.app_commands.Choice(name="30 seconds", value=30),
+        discord.app_commands.Choice(name="1 minute", value=60),
+        discord.app_commands.Choice(name="2 minutes", value=120),
+        discord.app_commands.Choice(name="5 minutes", value=300),
+        discord.app_commands.Choice(name="10 minutes", value=600),
+        discord.app_commands.Choice(name="30 minutes", value=1800),
+        discord.app_commands.Choice(name="1 hour", value=3600)
+    ])
+    @app_commands.describe(
+        duration="The duration to set the slowmode to",
+        channel="The channel to set slowmode for (optional)"
+    )
+    async def channel_slowmode(
+            self, interaction: discord.Interaction,
+            duration: discord.app_commands.Choice[int],
+            channel: Union[
+                discord.TextChannel, discord.VoiceChannel,
+                discord.StageChannel
+            ] = None
+    ) -> None:
+        """Set slowmode for a channel."""
+        if channel is None:
+            channel = interaction.channel
+        try:
+            await channel.edit(slowmode_delay=duration.value)
+            await interaction.response.send_message(
+                f"{SUCCESS_EMOJI} Channel slowmode set to: **{duration.name}**",
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to set slowmode for this channel.",
+                ephemeral=True
+            )
+
 
 async def setup(bot):
     """Add the Moderation cog to the bot."""
