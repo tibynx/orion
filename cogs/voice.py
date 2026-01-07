@@ -114,7 +114,9 @@ class Voice(commands.Cog):
             'libopus.so',
             'opus',
             'libopus-0.x64.dll',
-            'libopus-0.x86.dll'
+            'libopus-0.x86.dll',
+            'libopus-0.dll',
+            'opus.dll'
         ]
         for lib in opus_libs:
             try:
