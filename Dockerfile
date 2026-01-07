@@ -32,6 +32,9 @@ LABEL org.opencontainers.image.licenses="GPL-3.0"
 LABEL org.opencontainers.image.base.name="python:3.14-alpine"
 LABEL org.opencontainers.image.base.documentation="https://hub.docker.com/_/python"
 
+# install ffmpeg and opus for voice support
+RUN apk add --no-cache ffmpeg opus
+
 # set environment
 WORKDIR /app
 
