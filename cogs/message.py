@@ -166,16 +166,18 @@ class Message(commands.Cog):
     @app_commands.default_permissions(manage_messages=True)
     @app_commands.guild_only()
     @app_commands.describe(
-        channel="The channel to send the message in."
+        channel="The channel to send the message in (optional)"
     )
     async def send_message_modal(
         self, interaction: discord.Interaction,
         channel: Union[
             discord.TextChannel, discord.Thread,
             discord.StageChannel, discord.VoiceChannel
-        ],
+        ] = None,
     ):
         """Display a modal to send a message to a specific channel."""
+        if channel is None:
+            channel = interaction.channel
         # Send the message modal
         await interaction.response.send_modal(MessageModal(channel))
 
