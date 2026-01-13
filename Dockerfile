@@ -46,6 +46,8 @@ ENV PATH="/app/venv/bin:$PATH"
 COPY --from=build-stage /app/venv /app/venv
 COPY . .
 
+# set volume for logs
+VOLUME ["/app/logs"]
+
 # run the app
 CMD ["python", "main.py"]
-VOLUME [ "/logs" ]
