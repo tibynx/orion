@@ -205,7 +205,7 @@ class Voice(commands.Cog):
         return kind.mime in Voice.VALID_AUDIO_MIME_TYPES
 
     @app_commands.command(
-        name="play",
+        name="playbackstart",
         description="Play an audio file in your current voice or stage channel."
     )
     @app_commands.guild_only()
@@ -355,7 +355,7 @@ class Voice(commands.Cog):
             )
 
     @app_commands.command(
-        name="pause",
+        name="playbackpause",
         description="Pause the currently playing audio."
     )
     @app_commands.guild_only()
@@ -382,7 +382,7 @@ class Voice(commands.Cog):
         return None
 
     @app_commands.command(
-        name="resume",
+        name="playbackresume",
         description="Resume the paused audio."
     )
     @app_commands.guild_only()
@@ -409,7 +409,7 @@ class Voice(commands.Cog):
         return None
 
     @app_commands.command(
-        name="stop",
+        name="playbackstop",
         description="Stop the currently playing audio and disconnect."
     )
     @app_commands.guild_only()
@@ -430,7 +430,7 @@ class Voice(commands.Cog):
         return None
 
     @app_commands.command(
-        name="volume",
+        name="playbackvol",
         description="Adjust the playback volume (0-200%)."
     )
     @app_commands.guild_only()
