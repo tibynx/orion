@@ -28,6 +28,7 @@ docker run -d \
   -e BOT_TOKEN=your_bot_token_here \
   -e SUCCESS_EMOJI=✅ `#optional` \
   -e ERROR_EMOJI=❌ `#optional` \
+  -v /path/to/logs:/app/logs \
   tibynx/orion:latest
 ```
 
