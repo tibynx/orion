@@ -110,10 +110,20 @@ class ReplyModal(discord.ui.Modal):
         required=True,
     )
 
+    mention_author_toggle = discord.ui.Label(
+        text="Mention Author",
+        description="Whether to ping the original author.",
+        component=discord.ui.Checkbox(default=True)
+    )
+
     async def on_submit(self, interaction: discord.Interaction):
         """Send the reply upon submission."""
         await interaction.response.defer(ephemeral=True)
-        await self.message.reply(self.reply_message.value)
+        should_mention = self.mention_author_toggle.component.value
+        await self.message.reply(
+            self.reply_message.value,
+            mention_author=should_mention
+        )
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Reply sent successfully to {self.message.author.mention}.",
             ephemeral=True
