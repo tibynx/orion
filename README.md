@@ -61,9 +61,6 @@ Then, you can run the bot using the `python main.py` command!
 | SUCCESS_EMOJI | (Optional) The emoji the bot will use to indicate success. |
 |  ERROR_EMOJI  | (Optional) The emoji the bot will use in indicate issues.  |
 
-The emoji format can be either a Unicode emoji (e.g., ✅) or a custom emoji in the format `<a:name:id>` (e.g., `<a:tick:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it.
-
-
 ## Usage
 
 After setting up, invite your bot to a server using this premade link! It already contains the proper permissions. Replace `<app-id>` with your bot's appication ID.
@@ -71,3 +68,16 @@ After setting up, invite your bot to a server using this premade link! It alread
 ```sh
 https://discord.com/oauth2/authorize?client_id=<app-id>&permissions=120796048384&integration_type=0&scope=bot+applications.commands
 ```
+
+### Mentioning Users and Roles
+
+Due to Discord limitations, you cannot directly mention users or roles in the bot's response. However, you can use their IDs to create mentions. You'll need to enable Developer Mode in Discord to copy user and role IDs. To enable Developer Mode, go to User Settings > Advanced > Developer Mode.
+If you want to mention `@everyone` or `@here`, simply write them in your message. But if you want to mention roles or specific users, you need to use their IDs in the following format: `<@&ROLE_ID>` for roles and `<@USER_ID>` for users. 
+
+### Pinging mentions
+
+For convenience, you can choose to ping the mentions by ticking the options in the message modal. The bot will not mention `@everyone` or `@here` by default.
+
+### Using emojis
+
+Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<a:EMOJI_NAME:EMOJI_ID>` (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it.
