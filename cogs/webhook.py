@@ -19,7 +19,7 @@ class WebhookSendModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send.",
+        placeholder="Enter the message to send. Markdown formatting is supported. (no preview)",
         required=True,
         max_length=2000,
     )

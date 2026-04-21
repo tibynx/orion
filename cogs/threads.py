@@ -22,7 +22,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
     first_message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the first message of the thread.",
+        placeholder="Enter the first message of the thread. Markdown formatting is supported. (no preview)",
         required=True,
         max_length=2000, # Discord's message character limit
     )
