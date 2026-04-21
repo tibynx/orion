@@ -33,7 +33,11 @@ class DiscordBot(commands.Bot):
     def __init__(self) -> None:
         """Initialize the bot with default intents and logging."""
         # No prefix since we use app commands
-        super().__init__(command_prefix="", intents=intents)
+        super().__init__(
+            allowed_mentions = discord.AllowedMentions(roles=False, users=False, everyone=False),
+            command_prefix="",
+            intents=intents
+        )
         self.logger = logger
         self.tree.on_error = self.on_app_command_error
 
