@@ -28,10 +28,35 @@ class MessageModal(discord.ui.Modal):
         required=True,
     )
 
+    allowed_mentions_toggles = discord.ui.Label(
+        text="Allowed Mentions",
+        description="Whether to ping mentions in the message.",
+        component=discord.ui.CheckboxGroup(
+            options=[
+                discord.CheckboxGroupOption(label="Members", default=True),
+                discord.CheckboxGroupOption(label="Roles", default=True),
+                discord.CheckboxGroupOption(label="@everyone and @here", default=False)
+            ],
+            required=False
+        )
+    )
+
     async def on_submit(self, interaction: discord.Interaction):
         """Send the message to the channel upon submission."""
         await interaction.response.defer(ephemeral=True)
-        await self.channel.send(self.message.value)
+        selected = self.allowed_mentions_toggles.component.values
+        mention_user = "Members" in selected
+        mention_role = "Roles" in selected
+        mention_everyone = "@everyone and @here" in selected
+        allowed_mentions = discord.AllowedMentions(
+            users=mention_user,
+            roles=mention_role,
+            everyone=mention_everyone,
+        )
+        await self.channel.send(
+            self.message.value,
+            allowed_mentions=allowed_mentions,
+        )
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Message sent successfully in {self.channel.mention}.",
             ephemeral=True
