@@ -97,3 +97,7 @@ For convenience, you can choose to ping the mentions by ticking the options in t
 ### Using emojis
 
 Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<a:EMOJI_NAME:EMOJI_ID>` (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it.
+
+### Formatting code blocks and text
+
+Just like normal messages, you can format your text using Markdown syntax. You can make text **bold**, *italic*, ~~strikethrough~~, etc. The bot message will be formatted accordingly, but there is no preview.

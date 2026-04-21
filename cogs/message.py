@@ -23,7 +23,7 @@ class MessageModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send.",
+        placeholder="Enter the message to send. Markdown formatting is supported. (no preview)",
         max_length=2000, # Discord's message character limit
         required=True,
     )
@@ -88,7 +88,7 @@ class DmModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send.",
+        placeholder="Enter the message to send.  Markdown formatting is supported. (no preview)",
         max_length=2000, # Discord's message character limit
         required=True,
     )
@@ -130,7 +130,7 @@ class ReplyModal(discord.ui.Modal):
     reply_message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send.",
+        placeholder="Enter the message to send. Markdown formatting is supported. (no preview)",
         max_length=2000, # Discord's message character limit
         required=True,
     )
