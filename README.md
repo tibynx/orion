@@ -13,47 +13,60 @@ Orion is a Discord server management and utility bot that provides various admin
 
 ## Setup
 
-Create an application on the [Discord Developer Portal](https://discord.com/developers/applications), and copy the application ID and the bot token for later.
+### Prerequisites
 
-> [!NOTE]
-> This bot intended to be used in only one server at a time. If you want to use it in multiple servers, you will need to create another bot with different bot tokens.
+1. Create an application on the [Discord Developer Portal](https://discord.com/developers/applications)
+   - Click "New Application" and give it a name.
+   - Note down the Application ID for later.
+   - Go to the "Bot" tab and click "Add Bot".
+   - Under "TOKEN", click "Copy" to copy your bot token. (You might need to reset it to see it.)
+
+    > [!NOTE]
+    > This bot intended to be used in only one server at a time. If you want to use it in multiple servers, you will need to create another bot with different bot tokens.
+
+2. Enable developer mode in Discord to copy IDs
+   - Go to User Settings > Advanced > Developer Mode and enable it.
+   - You can now right-click on users, roles, channels, etc., and select "Copy ID" to get their IDs.
+3. Invite the bot to a Discord server
+   - You can use the premade link in the usage section.
+
+Now choose one of the following methods to run the bot!
 
 ### Docker
 
-If you prefer, you can set up the bot using Docker.
+1. Pull the latest image from Docker Hub
+   ```sh
+   docker pull tibynx/orion:latest
+   ```
+2. Run the container with the required environment variables and volume mounts
+   - See the configuration section below for details! Only required options are included in this example.
+   - Change `/path/to/logs` to a directory on your host where you want to store the logs.
 
-```sh
-docker run -d \
-  --name=orion \
-  -e BOT_TOKEN=your_bot_token_here \
-  -e SUCCESS_EMOJI=✅ `#optional` \
-  -e ERROR_EMOJI=❌ `#optional` \
-  -v /path/to/logs:/app/logs \
-  tibynx/orion:latest
-```
+    ```sh
+    docker run -d \
+      --name=orion \
+      -e BOT_TOKEN=your_bot_token_here \
+      -v /path/to/logs:/app/logs \
+      tibynx/orion:latest
+    ```
 
 
 ### Source
+ 
+1. Clone the repository and install all dependencies. Make sure you have at least Python 3.14 installed!
+   ```sh
+   git clone https://github.com/tibynx/orion.git
+   cd orion/
+   pip install -r requirements.txt
+   ```
+2. Copy `.env.example` to `.env` and configure your settings.
+   - See the configuration section below for details!
+   - Do not share your `.env` file publicly!
+3. Invite the bot to a Discord server
+   - You can use the premade link in the usage section.
+4. Run `python main.py` to start the bot.
 
-Clone the repo and install all required packages! Make sure you have at least Python 3.14 installed!
-
-```sh
-git clone https://github.com/tibynx/orion.git
-cd orion
-pip install -r requirements.txt
-```
-
-In the meantime, create an `.env` file according to the `.env.example` file! Do not share your bot token with anyone!
-
-```sh
-BOT_TOKEN="your_bot_token_here"
-SUCCESS_EMOJI="✅" #optional
-ERROR_EMOJI="❌" #optional
-```
-
-Then, you can run the bot using the `python main.py` command!
-
-### Environment Variables
+### Configuration
 
 |   Variable    | Description                                                |
 |:-------------:|------------------------------------------------------------|
@@ -68,6 +81,9 @@ After setting up, invite your bot to a server using this premade link! It alread
 ```sh
 https://discord.com/oauth2/authorize?client_id=<app-id>&permissions=120796048384&integration_type=0&scope=bot+applications.commands
 ```
+
+> [!TIP]
+> You can restrict commands to specific roles/users and channels using Discord's Integrations menu inside the Server Settings.
 
 ### Mentioning Users and Roles
 
