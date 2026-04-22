@@ -72,7 +72,7 @@ class WebhookSendModal(discord.ui.Modal):
         if isinstance(error, discord.NotFound):
             msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
-            msg = f"{ERROR_EMOJI} I don`t have permission to send messages with this webhook."
+            msg = f"{ERROR_EMOJI} I don't have permission to send messages with this webhook."
 
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
@@ -412,7 +412,7 @@ class Webhook(commands.Cog):
             webhook = await self.bot.fetch_webhook(webhook_id)
         except discord.Forbidden:
             return await interaction.response.send_message(
-                f"{ERROR_EMOJI} I don't have permission to purge messages.",
+                f"{ERROR_EMOJI} I don't have permission to delete webhooks.",
                 ephemeral=True
             )
         except discord.NotFound:
