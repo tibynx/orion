@@ -23,7 +23,13 @@ class WebhookSendModal(discord.ui.Modal):
         required=True,
         max_length=2000,
     )
-
+    add_files = discord.ui.Label(
+        text="Upload Attachments",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
+    )
     allowed_mentions_toggles = discord.ui.Label(
         text="Allowed Mentions",
         description="Whether to ping mentions in the message.",
@@ -40,6 +46,8 @@ class WebhookSendModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         """Send the message through the webhook upon submission."""
         await interaction.response.defer(ephemeral=True)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
         selected = self.allowed_mentions_toggles.component.values
         mention_user = "Members" in selected
         mention_role = "Roles" in selected
@@ -51,6 +59,7 @@ class WebhookSendModal(discord.ui.Modal):
         )
         await self.webhook.send(
             content=self.message.value,
+            files=files or None,
             allowed_mentions=allowed_mentions
         )
         await interaction.followup.send(

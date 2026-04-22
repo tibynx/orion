@@ -27,7 +27,13 @@ class MessageModal(discord.ui.Modal):
         max_length=2000, # Discord's message character limit
         required=True,
     )
-
+    add_files = discord.ui.Label(
+        text="Upload Attachments",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
+    )
     allowed_mentions_toggles = discord.ui.Label(
         text="Allowed Mentions",
         description="Whether to ping mentions in the message.",
@@ -44,6 +50,8 @@ class MessageModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         """Send the message to the channel upon submission."""
         await interaction.response.defer(ephemeral=True)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
         selected = self.allowed_mentions_toggles.component.values
         mention_user = "Members" in selected
         mention_role = "Roles" in selected
@@ -55,6 +63,7 @@ class MessageModal(discord.ui.Modal):
         )
         await self.channel.send(
             self.message.value,
+            files=files or None,
             allowed_mentions=allowed_mentions,
         )
         await interaction.followup.send(
@@ -88,16 +97,25 @@ class DmModal(discord.ui.Modal):
     message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
-        placeholder="Enter the message to send.  Markdown formatting is supported. (no preview)",
+        placeholder="Enter the message to send. Markdown formatting is supported. (no preview)",
         max_length=2000, # Discord's message character limit
         required=True,
+    )
+    add_files = discord.ui.Label(
+        text="Upload Attachments",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         """Send the direct message upon submission."""
         # Defer the response to avoid interaction timeout while sending the DM
         await interaction.response.defer(ephemeral=True)
-        await self.user.send(self.message.value)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
+        await self.user.send(self.message.value, files=files or None)
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}.",
             ephemeral=True
@@ -134,6 +152,13 @@ class ReplyModal(discord.ui.Modal):
         max_length=2000, # Discord's message character limit
         required=True,
     )
+    add_files = discord.ui.Label(
+        text="Upload Attachments",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
+    )
 
     mention_author_toggle = discord.ui.Label(
         text="Mention Author",
@@ -144,9 +169,12 @@ class ReplyModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         """Send the reply upon submission."""
         await interaction.response.defer(ephemeral=True)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
         should_mention = self.mention_author_toggle.component.value
         await self.message.reply(
             self.reply_message.value,
+            files=files or None,
             mention_author=should_mention
         )
         await interaction.followup.send(
