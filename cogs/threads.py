@@ -26,17 +26,29 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
         required=True,
         max_length=2000, # Discord's message character limit
     )
+    add_files = discord.ui.Label(
+        text="Upload Attachments",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
+    )
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         """Create the thread and send the first message upon submission."""
         await interaction.response.defer(ephemeral=True)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
         # Create the thread from the message
         thread = await self.message.create_thread(
             name=self.name.value,
             auto_archive_duration=4320  # 3 days
         )
         # Send the first message in the thread
-        await thread.send(content=self.first_message.value)
+        await thread.send(
+            content=self.first_message.value,
+            files=files or None,
+        )
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Thread created successfully.",
             ephemeral=True
