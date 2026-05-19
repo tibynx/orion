@@ -67,6 +67,16 @@ class DiscordBot(commands.Bot):
         self.logger.info("-------------------")
         await self.load_cogs()
 
+        # Warn if the bot is in more than one guild (this project is intended for a single server)
+        try:
+            if len(self.guilds) > 1:
+                self.logger.warning(
+                    "This bot intended to be used in only one server at a time. "
+                    "Please remove it from other servers to avoid unexpected behavior."
+                )
+        except Exception as error:
+            self.logger.error("Failed to check guild count: %s", type(error).__name__)
+
         # Sync interactions
         try:
             synced = await self.tree.sync() # Sync all commands globally
@@ -83,6 +93,15 @@ class DiscordBot(commands.Bot):
             "Joined guild '%s' (ID: %s) with %d member(s), the guild owner is %s (ID: %s)",
             guild.name, guild.id, len(guild.members), guild.owner, guild.owner.id
         )
+        # Warn if adding this guild puts the bot into more than one guild
+        try:
+            if len(self.guilds) > 1:
+                self.logger.warning(
+                    "This bot intended to be used in only one server at a time. "
+                    "Please remove it from other servers to avoid unexpected behavior."
+                )
+        except Exception as error:
+            self.logger.error("Failed to check guild count: %s", type(error).__name__)
 
     # Log guild leave
     async def on_guild_remove(self, guild: discord.Guild) -> None:
