@@ -52,6 +52,11 @@ class Moderation(commands.Cog):
                 f"{ERROR_EMOJI} I don't have permission to purge messages.",
                 ephemeral=True
             )
+        except discord.HTTPException as e:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} An error occurred while purging messages: {e.text}",
+                ephemeral=True
+            )
 
 
     # Delete only pinned messages
@@ -76,6 +81,12 @@ class Moderation(commands.Cog):
             if channel is None:
                 channel = interaction.channel # Default to current channel
             pinned_messages = await channel.pins() # Get pinned messages
+            if not pinned_messages:
+                await interaction.followup.send(
+                    f"{ERROR_EMOJI} There are no pinned messages in this channel.",
+                    ephemeral=True
+                )
+                return
             delete_tasks = [message.delete() for message in pinned_messages]
             # Delete pinned messages concurrently
             results = await asyncio.gather(*delete_tasks, return_exceptions=True)
@@ -91,6 +102,11 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} I don't have permission to purge messages.",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} An error occurred while purging messages: {e.text}",
                 ephemeral=True
             )
 
