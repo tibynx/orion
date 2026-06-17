@@ -84,6 +84,13 @@ class Threads(commands.Cog):
         )
         self.bot.tree.add_command(self.thread_command)
 
+        # Context menu command for pinning/unpinning a message in a thread or forum post
+        self.pin_command = app_commands.ContextMenu(
+            name="Pin/Unpin Message",
+            callback=self.pin_unpin_callback
+        )
+        self.bot.tree.add_command(self.pin_command)
+
     # Helper to resolve a thread from the current context or a provided ID
     async def _get_thread(
             self, interaction: discord.Interaction, thread_id: str | None = None
@@ -308,6 +315,60 @@ class Threads(commands.Cog):
         except discord.Forbidden:
             await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to unlock this thread.",
+                ephemeral=True
+            )
+
+    # Callback for the Pin/Unpin Message context menu command
+    @app_commands.guild_only()
+    async def pin_unpin_callback(
+            self, interaction: discord.Interaction, message: discord.Message
+    ) -> None:
+        """Pin or unpin a message in a thread or forum post."""
+        thread = message.channel
+        if not isinstance(thread, discord.Thread):
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} This command can only be used on messages in threads or forums.",
+                ephemeral=True
+            )
+            return
+
+        permissions = thread.permissions_for(interaction.user)
+        is_author = interaction.user.id == thread.owner_id
+
+        # Determine authorization based on thread/post lock status
+        if thread.locked:
+            if not permissions.pin_messages:
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} You don't have permission to pin/unpin messages.",
+                    ephemeral=True
+                )
+                return
+        else:
+            if not (is_author or permissions.pin_messages):
+                await interaction.response.send_message(
+                    f"{ERROR_EMOJI} Only the thread/post author can pin/unpin messages.",
+                    ephemeral=True
+                )
+                return
+
+        # Perform the pin/unpin operation
+        try:
+            if message.pinned:
+                await message.unpin()
+                await interaction.response.send_message(
+                    f"{SUCCESS_EMOJI} Message has been unpinned.",
+                    ephemeral=True
+                )
+            else:
+                await message.pin()
+                await interaction.response.send_message(
+                    f"{SUCCESS_EMOJI} Message has been pinned.",
+                    ephemeral=True
+                )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} I don't have permission to pin/unpin "
+                "messages in this thread or forum.",
                 ephemeral=True
             )
 
