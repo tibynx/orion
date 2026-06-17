@@ -330,7 +330,7 @@ class Threads(commands.Cog):
         thread = message.channel
         if not isinstance(thread, discord.Thread):
             await interaction.response.send_message(
-                f"{ERROR_EMOJI} This command can only be used on messages in threads or forums.",
+                f"{ERROR_EMOJI} This command can only be used in threads or posts.",
                 ephemeral=True
             )
             return
