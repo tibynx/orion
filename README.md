@@ -20,6 +20,7 @@ Orion is a Discord server management and utility bot that provides various admin
    - Note down the Application ID for later.
    - Go to the "Bot" tab and click "Add Bot".
    - Under "TOKEN", click "Copy" to copy your bot token. (You might need to reset it to see it.)
+   - You don't need to enable any Privileged Gateway Intents for the bot.
 
 > [!NOTE]
 > This bot intended to be used in only one server at a time. If you want to use it in multiple servers, you will need to create another bot with different bot tokens.
