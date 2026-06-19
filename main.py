@@ -9,7 +9,6 @@ from config import BOT_TOKEN, ERROR_EMOJI
 
 # Set intents
 intents = discord.Intents.default()
-intents.message_content = True
 intents.voice_states = True
 
 # Set up logging
