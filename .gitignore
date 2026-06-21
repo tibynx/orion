@@ -234,3 +234,4 @@ fabric.properties
 
 # Project specific
 /logs
+temp_roles_db.json
