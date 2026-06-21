@@ -47,6 +47,7 @@ Now choose one of the following methods to run the bot!
       --name=orion \
       -e BOT_TOKEN=your_bot_token_here \
       -v /path/to/logs:/app/logs \
+      -v /path/to/temp_roles_db.json:/app/temp_roles_db.json \
       tibynx/orion:latest
     ```
 
