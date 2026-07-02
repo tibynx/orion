@@ -7,9 +7,16 @@ from discord.ext import commands
 from config import BOT_TOKEN, ERROR_EMOJI
 
 
+# Suppress the message content intent warning since the bot only uses interactions
+class IntentWarningFilter(logging.Filter):
+    """Suppress the message content intent warning since the bot only uses interactions"""
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "Privileged message content intent is missing" not in record.getMessage()
+logging.getLogger("discord.ext.commands.bot").addFilter(IntentWarningFilter())
+
+
 # Set intents
 intents = discord.Intents.default()
-intents.message_content = True
 intents.voice_states = True
 
 # Set up logging
@@ -132,12 +139,6 @@ class DiscordBot(commands.Bot):
     async def on_error(self, event_name: str, *args, **kwargs) -> None:
         """Log unexpected errors occurring during event processing."""
         self.logger.exception("An error occurred in %s", event_name)
-
-    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
-        """Handle errors that occur during prefix command execution."""
-        if isinstance(error, commands.CommandNotFound):
-            return  # Ignore command not found errors
-        self.logger.error("An unhandled command error occurred: %s", error)
 
     async def on_app_command_error(
             self, interaction: discord.Interaction, error: app_commands.AppCommandError
