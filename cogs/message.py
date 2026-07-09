@@ -197,6 +197,89 @@ class ReplyModal(discord.ui.Modal):
             await interaction.response.send_message(msg, ephemeral=True)
 
 
+# Modal for editing a message
+class EditMessageModal(discord.ui.Modal):
+    """Modal for editing an existing bot message."""
+    def __init__(self, message: discord.Message):
+        """Initialize the modal with the target message."""
+        super().__init__(title="Edit Message")
+        self.message = message
+        self.edit_message.default = message.content
+
+    edit_message = discord.ui.TextInput(
+        label="Message",
+        style=discord.TextStyle.long,
+        placeholder="Enter the updated message. Markdown formatting is supported. (no preview)",
+        max_length=2000, # Discord's message character limit
+        required=True,
+    )
+    add_files = discord.ui.Label(
+        text="Upload Additional Attachments",
+        description="Existing attachments will be preserved.",
+        component=discord.ui.FileUpload(
+            max_values=10,
+            required=False
+        )
+    )
+    allowed_mentions_toggles = discord.ui.Label(
+        text="Allowed Mentions",
+        description="Whether to ping mentions in the message.",
+        component=discord.ui.CheckboxGroup(
+            options=[
+                discord.CheckboxGroupOption(label="Members", default=True),
+                discord.CheckboxGroupOption(label="Roles", default=True),
+                discord.CheckboxGroupOption(label="@everyone and @here", default=False)
+            ],
+            required=False
+        )
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """Edit the message upon submission."""
+        await interaction.response.defer(ephemeral=True)
+        uploaded_files = self.add_files.component.values or []
+        files = [await attachment.to_file() for attachment in uploaded_files]
+        
+        # Keep existing attachments and append new files
+        attachments = list(self.message.attachments)
+        attachments.extend(files)
+        
+        selected = self.allowed_mentions_toggles.component.values
+        mention_user = "Members" in selected
+        mention_role = "Roles" in selected
+        mention_everyone = "@everyone and @here" in selected
+        allowed_mentions = discord.AllowedMentions(
+            users=mention_user,
+            roles=mention_role,
+            everyone=mention_everyone,
+        )
+        
+        await self.message.edit(
+            content=self.edit_message.value,
+            attachments=attachments,
+            allowed_mentions=allowed_mentions,
+        )
+        await interaction.followup.send(
+            f"{SUCCESS_EMOJI} Message edited successfully.",
+            ephemeral=True
+        )
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """Handle errors during message edit."""
+        if isinstance(error, discord.NotFound):
+            msg = f"{ERROR_EMOJI} This message is no longer available."
+        elif isinstance(error, discord.Forbidden):
+            msg = f"{ERROR_EMOJI} I do not have permission to edit this message."
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
+            raise error
+
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+
+
 # Message commands
 class Message(commands.Cog):
     """Cog for sending and replying to messages."""
@@ -217,6 +300,13 @@ class Message(commands.Cog):
             callback=self.dm_command_callback
         )
         self.bot.tree.add_command(self.dm_command)
+
+        # Context menu command for editing a bot message
+        self.edit_command = app_commands.ContextMenu(
+            name="Edit Message",
+            callback=self.edit_command_callback
+        )
+        self.bot.tree.add_command(self.edit_command)
 
 
 
@@ -296,6 +386,22 @@ class Message(commands.Cog):
             return
         # Send the DM modal
         await interaction.response.send_modal(DmModal(user))
+
+
+    # Callback for the edit context menu command
+    @app_commands.guild_only()
+    # Requires manage messages permission
+    @app_commands.default_permissions(manage_messages=True)
+    async def edit_command_callback(self, interaction: discord.Interaction, message: discord.Message):
+        """Display a modal to edit one of the bot's messages via context menu."""
+        if message.author != self.bot.user:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} Only my own messages can be edited.",
+                ephemeral=True
+            )
+            return
+        # Send the edit modal
+        await interaction.response.send_modal(EditMessageModal(message))
 
 
 
