@@ -203,6 +203,65 @@ class WebhookDeleteButton(discord.ui.View):
         )
 
 
+# Pagination view for webhooks
+class WebhookPaginationView(discord.ui.View):
+    """View for paginating webhook list embeds."""
+    def __init__(self, webhooks: list[discord.Webhook], guild_name: str):
+        """Initialize the pagination view with webhooks and guild name."""
+        super().__init__(timeout=180)
+        self.webhooks = webhooks
+        self.guild_name = guild_name
+        self.current_page = 0
+        self.per_page = 5
+        self.total_pages = (len(webhooks) - 1) // self.per_page + 1
+        self.update_buttons()
+
+    def update_buttons(self) -> None:
+        """Enable or disable pagination buttons based on current page."""
+        self.prev_page.disabled = self.current_page == 0
+        self.next_page.disabled = self.current_page == self.total_pages - 1
+
+    def build_embed(self) -> discord.Embed:
+        """Build the embed for the current page."""
+        start = self.current_page * self.per_page
+        end = start + self.per_page
+        page_webhooks = self.webhooks[start:end]
+
+        embed = discord.Embed(
+            title=f"Webhooks in {self.guild_name}",
+            color=None
+        )
+        for webhook in page_webhooks:
+            embed.add_field(
+                name=webhook.name,
+                value=(
+                    f"Channel: {webhook.channel.mention}\n"
+                    f"Created by: {webhook.user.mention}\nID: `{webhook.id}`"
+                ),
+                inline=False
+            )
+        embed.set_footer(
+            text=f"Page {self.current_page + 1}/{self.total_pages}  •  Total: {len(self.webhooks)}"
+        )
+        return embed
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary, emoji="◀️")
+    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the previous page of webhooks."""
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary, emoji="▶️")
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the next page of webhooks."""
+        if self.current_page < self.total_pages - 1:
+            self.current_page += 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+
 
 # Webhook commands
 class Webhook(commands.Cog):
@@ -226,34 +285,7 @@ class Webhook(commands.Cog):
         """Check if a webhook has a token associated with it."""
         return webhook.token is not None
 
-    @staticmethod
-    def _build_webhook_embeds(
-            webhooks: list[discord.Webhook], guild_name: str
-    ) -> list[discord.Embed]:
-        """Split webhooks into multiple embeds to respect the 25-field limit."""
-        # Split webhooks into multiple embeds to respect the 25-field limit per embed.
-        chunk_size = 25
-        embeds: list[discord.Embed] = []
-        for index in range(0, len(webhooks), chunk_size):
-            page = index // chunk_size + 1
-            embed = discord.Embed(
-                title=f"Webhooks in {guild_name}",
-                color=None
-            )
-            for webhook in webhooks[index:index + chunk_size]:
-                embed.add_field(
-                    name=webhook.name,
-                    value=(
-                        f"Channel: {webhook.channel.mention}\n"
-                        f"Created by: {webhook.user.mention}\nID: `{webhook.id}`"
-                    ),
-                    inline=False
-                )
-            embed.set_footer(
-                text=f"Page {page}  •  Total: {len(webhooks)}"
-            )
-            embeds.append(embed)
-        return embeds
+
 
 
     # Group for editing webhooks
@@ -337,11 +369,10 @@ class Webhook(commands.Cog):
                     f"{ERROR_EMOJI} No webhooks found in this server.",
                     ephemeral=True
                 )
-            embeds = self._build_webhook_embeds(webhooks, interaction.guild.name)
-            # Send pages sequentially to stay ephemeral per message
-            for index, embed in enumerate(embeds):
-                await interaction.followup.send(embed=embed, ephemeral=True)
-            return None
+            view = WebhookPaginationView(webhooks, interaction.guild.name)
+            return await interaction.followup.send(
+                embed=view.build_embed(), view=view, ephemeral=True
+            )
         except discord.Forbidden:
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} I don't have permission to list webhooks.",
