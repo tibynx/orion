@@ -73,6 +73,10 @@ class WebhookSendModal(discord.ui.Modal):
             msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
             msg = f"{ERROR_EMOJI} I don't have permission to send messages with this webhook."
+        elif isinstance(error, ValueError):
+            msg = f"{ERROR_EMOJI} {error}"
+        else:
+            msg = f"{ERROR_EMOJI} An unexpected error occurred: {error}"
 
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
@@ -216,6 +220,12 @@ class Webhook(commands.Cog):
             discord.WebhookType.channel_follower, discord.WebhookType.application
         )
 
+    # Helper to check if a webhook has a token
+    @staticmethod
+    def _has_token(webhook: discord.Webhook) -> bool:
+        """Check if a webhook has a token associated with it."""
+        return webhook.token is not None
+
     @staticmethod
     def _build_webhook_embeds(
             webhooks: list[discord.Webhook], guild_name: str
@@ -288,8 +298,8 @@ class Webhook(commands.Cog):
                     text="🛈  This webhook is managed by "
                          f"{webhook.user.name}#{webhook.user.discriminator}."
                 )
-            # Check if it's an application or channel follower webhook (we can only delete those)
-            elif self._is_readonly_webhook(webhook):
+            # Check if it's an application or channel follower webhook, or lacks a token (we can only delete those)
+            if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
                 return await interaction.response.send_message(
                     embed=embed, view=WebhookDeleteButton(webhook), ephemeral=True
                 )
@@ -437,7 +447,7 @@ class Webhook(commands.Cog):
         """Display the URL of a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
-            if self._is_readonly_webhook(webhook):
+            if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} You cannot get the URL for this webhook.",
                     ephemeral=True
@@ -487,8 +497,8 @@ class Webhook(commands.Cog):
                 f"{ERROR_EMOJI} You cannot send messages to forum webhooks.",
                 ephemeral=True
             )
-        # Check if it's a channel follower or application webhook
-        if self._is_readonly_webhook(webhook):
+        # Check if it's a channel follower, application webhook, or lacks a token
+        if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages with this webhook.",
                 ephemeral=True
