@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import filetype
-from config import SUCCESS_EMOJI, ERROR_EMOJI
+from config import SUCCESS_EMOJI, ERROR_EMOJI, PREVIOUS_EMOJI, NEXT_EMOJI
 
 
 # Modal for sending messages via webhook ID
@@ -214,6 +214,9 @@ class WebhookPaginationView(discord.ui.View):
         self.current_page = 0
         self.per_page = 5
         self.total_pages = (len(webhooks) - 1) // self.per_page + 1
+        # Set pagination emojis from config
+        self.prev_page.emoji = PREVIOUS_EMOJI
+        self.next_page.emoji = NEXT_EMOJI
         self.update_buttons()
 
     def update_buttons(self) -> None:
@@ -245,7 +248,7 @@ class WebhookPaginationView(discord.ui.View):
         )
         return embed
 
-    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary, emoji="◀️")
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary)
     async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         """Go to the previous page of webhooks."""
         if self.current_page > 0:
@@ -253,7 +256,7 @@ class WebhookPaginationView(discord.ui.View):
             self.update_buttons()
             await interaction.response.edit_message(embed=self.build_embed(), view=self)
 
-    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary, emoji="▶️")
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
     async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         """Go to the next page of webhooks."""
         if self.current_page < self.total_pages - 1:
