@@ -76,7 +76,12 @@ class WebhookSendModal(discord.ui.Modal):
         elif isinstance(error, ValueError):
             msg = f"{ERROR_EMOJI} {error}"
         else:
-            msg = f"{ERROR_EMOJI} An unexpected error occurred: {error}"
+            self.bot.logger.error(
+                "Unhandled error in WebhookSendModal.on_submit: %r",
+                error,
+                exc_info=(type(error), error, error.__traceback__),
+            )
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
 
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
