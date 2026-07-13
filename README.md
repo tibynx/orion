@@ -29,7 +29,7 @@ Orion is a Discord server management and utility bot that provides various admin
    - Go to User Settings > Advanced > Developer Mode and enable it.
    - You can now right-click on users, roles, channels, etc., and select "Copy ID" to get their IDs.
 3. Invite the bot to a Discord server
-   - You can use the premade link in the usage section.
+   - You can use the premade link in the [invite section](#invite).
 
 Now choose one of the following methods to run the bot!
 
@@ -79,6 +79,8 @@ Now choose one of the following methods to run the bot!
 | EXCLUDED_EMOJIS | (Optional) A comma separated list of emojis (names or IDs) to exclude from the bot emojis list. |
 
 ## Usage
+
+## Invite
 
 After setting up, invite your bot to a server using this premade link! It already contains the proper permissions. Replace `<app-id>` with your bot's appication ID.
 
