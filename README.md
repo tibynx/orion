@@ -102,7 +102,7 @@ For convenience, you can choose to ping the mentions by ticking the options in t
 
 ### Using emojis
 
-Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<EMOJI_NAME:EMOJI_ID>` (static) or `<a:EMOJI_NAME:EMOJI_ID>` (animated) (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it. Use the `/botemojis` command to see all the emojis the bot has.
+Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<:EMOJI_NAME:EMOJI_ID>` (static) or `<a:EMOJI_NAME:EMOJI_ID>` (animated) (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it. Use the `/botemojis` command to see all the emojis the bot has.
 
 ### Formatting code blocks and text
 
