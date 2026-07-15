@@ -80,7 +80,7 @@ Now choose one of the following methods to run the bot!
 
 ## Usage
 
-## Invite
+### Invite
 
 After setting up, invite your bot to a server using this premade link! It already contains the proper permissions. Replace `<app-id>` with your bot's appication ID.
 
