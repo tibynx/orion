@@ -290,8 +290,7 @@ class Message(commands.Cog):
         """Fetch and cache application emojis, filtering out excluded ones."""
         try:
             emojis = await self.bot.fetch_application_emojis()
-            excluded = EXCLUDED_EMOJIS
-
+            excluded = set(EXCLUDED_EMOJIS)
             filtered = []
             for e in emojis:
                 if (e.name in excluded or
