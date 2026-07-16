@@ -10,3 +10,6 @@ SUCCESS_EMOJI = os.getenv('SUCCESS_EMOJI', '✅')
 ERROR_EMOJI = os.getenv('ERROR_EMOJI', '❌')
 PREVIOUS_EMOJI = os.getenv('PREVIOUS_EMOJI', '◀️')
 NEXT_EMOJI = os.getenv('NEXT_EMOJI', '▶️')
+EXCLUDED_EMOJIS = [
+    e.strip() for e in os.getenv('EXCLUDED_EMOJIS', '').split(',') if e.strip()
+]

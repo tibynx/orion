@@ -29,7 +29,7 @@ Orion is a Discord server management and utility bot that provides various admin
    - Go to User Settings > Advanced > Developer Mode and enable it.
    - You can now right-click on users, roles, channels, etc., and select "Copy ID" to get their IDs.
 3. Invite the bot to a Discord server
-   - You can use the premade link in the usage section.
+   - You can use the premade link in the [invite section](#invite).
 
 Now choose one of the following methods to run the bot!
 
@@ -74,10 +74,15 @@ Now choose one of the following methods to run the bot!
 |   BOT_TOKEN   | Your bot token. Do not share this with anyone!             |
 | SUCCESS_EMOJI | (Optional) The emoji the bot will use to indicate success. |
 |  ERROR_EMOJI  | (Optional) The emoji the bot will use in indicate issues.  |
+| PREVIOUS_EMOJI| (Optional) The emoji the bot will use for the previous button's icon. |
+|  NEXT_EMOJI   | (Optional) The emoji the bot will use for the next button's icon.  |
+| EXCLUDED_EMOJIS | (Optional) A comma separated list of emojis (names or IDs) to exclude from the bot emojis list. |
 
 ## Usage
 
-After setting up, invite your bot to a server using this premade link! It already contains the proper permissions. Replace `<app-id>` with your bot's appication ID.
+### Invite
+
+After setting up, invite your bot to a server using this premade link! It already contains the proper permissions. Replace `<app-id>` with your bot's application ID.
 
 ```sh
 https://discord.com/oauth2/authorize?client_id=<app-id>&permissions=120796048384&integration_type=0&scope=bot+applications.commands
@@ -97,7 +102,7 @@ For convenience, you can choose to ping the mentions by ticking the options in t
 
 ### Using emojis
 
-Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<a:EMOJI_NAME:EMOJI_ID>` (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it.
+Emojis can be either a Unicode emoji (e.g., ✨) or a custom emoji in the format `<:EMOJI_NAME:EMOJI_ID>` (static) or `<a:EMOJI_NAME:EMOJI_ID>` (animated) (e.g., `<a:star:733395207222984794>`). The bot must be in the server where the custom emoji is from or added to the bot on the Discord Developer Portal to use it. Use the `/botemojis` command to see all the emojis the bot has.
 
 ### Formatting code blocks and text
 
