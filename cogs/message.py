@@ -1,9 +1,9 @@
 """Cog for managing message-related interactions."""
 from typing import Union
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
-from config import SUCCESS_EMOJI, ERROR_EMOJI
+from config import SUCCESS_EMOJI, ERROR_EMOJI, PREVIOUS_EMOJI, NEXT_EMOJI, EXCLUDED_EMOJIS
 
 
 # Helper to check if the user is the bot itself.
@@ -197,12 +197,74 @@ class ReplyModal(discord.ui.Modal):
             await interaction.response.send_message(msg, ephemeral=True)
 
 
+# Pagination view for bot emojis
+class EmojiPaginationView(discord.ui.View):
+    """View for paginating bot emojis list embeds."""
+    def __init__(self, emojis: list[discord.Emoji]):
+        """Initialize the pagination view with emojis."""
+        super().__init__(timeout=180)
+        self.emojis = emojis
+        self.current_page = 0
+        self.per_page = 10
+        self.total_pages = max(1, (len(emojis) - 1) // self.per_page + 1)
+        # Set pagination emojis from config
+        self.prev_page.emoji = PREVIOUS_EMOJI
+        self.next_page.emoji = NEXT_EMOJI
+        self.update_buttons()
+
+    def update_buttons(self) -> None:
+        """Enable or disable pagination buttons based on current page."""
+        self.prev_page.disabled = self.current_page == 0
+        self.next_page.disabled = self.current_page >= self.total_pages - 1
+
+    def build_embed(self) -> discord.Embed:
+        """Build the embed for the current page."""
+        embed = discord.Embed(
+            title="Bot Emojis",
+            color=None
+        )
+        if not self.emojis:
+            embed.description = "No emojis available."
+        else:
+            start = self.current_page * self.per_page
+            end = start + self.per_page
+            page_emojis = self.emojis[start:end]
+
+            lines = []
+            for emoji in page_emojis:
+                lines.append(f"{emoji} `{emoji}`")
+            embed.description = "\n".join(lines)
+
+        embed.set_footer(
+            text=f"Page {self.current_page + 1}/{self.total_pages}  •  Total: {len(self.emojis)}"
+        )
+        return embed
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary)
+    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the previous page of emojis."""
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the next page of emojis."""
+        if self.current_page < self.total_pages - 1:
+            self.current_page += 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+
 # Message commands
 class Message(commands.Cog):
     """Cog for sending and replying to messages."""
     def __init__(self, bot):
         """Initialize the cog with the bot instance."""
         self.bot = bot
+        self.cached_emojis = []
+        self.refresh_emoji_cache.start()
 
         # Context menu command for replying to a message
         self.reply_command = app_commands.ContextMenu(
@@ -217,6 +279,35 @@ class Message(commands.Cog):
             callback=self.dm_command_callback
         )
         self.bot.tree.add_command(self.dm_command)
+
+    async def cog_unload(self) -> None:
+        """Stop the background tasks on cog unload."""
+        self.refresh_emoji_cache.cancel()
+
+    # Periodically refresh the application emojis cache every 30 minutes
+    @tasks.loop(minutes=30)
+    async def refresh_emoji_cache(self) -> None:
+        """Fetch and cache application emojis, filtering out excluded ones."""
+        try:
+            emojis = await self.bot.fetch_application_emojis()
+            excluded = set(EXCLUDED_EMOJIS)
+            filtered = []
+            for e in emojis:
+                if (e.name in excluded or
+                        str(e.id) in excluded or
+                        str(e) in excluded):
+                    continue
+                filtered.append(e)
+
+            self.cached_emojis = filtered
+            self.bot.logger.info("Successfully refreshed application emojis cache.")
+        except Exception as error:
+            self.bot.logger.error("Failed to refresh application emojis cache: %s", error)
+
+    @refresh_emoji_cache.before_loop
+    async def before_refresh_emoji_cache(self) -> None:
+        """Wait until the bot is ready before starting the cache loop."""
+        await self.bot.wait_until_ready()
 
 
 
@@ -296,6 +387,31 @@ class Message(commands.Cog):
             return
         # Send the DM modal
         await interaction.response.send_modal(DmModal(user))
+
+
+    # List all custom emojis that the bot owns
+    @app_commands.command(
+        name="botemojis",
+        description="List all custom emojis that the bot owns."
+    )
+    # Requires manage messages permission
+    @app_commands.default_permissions(manage_messages=True)
+    @app_commands.guild_only()
+    async def list_bot_emojis(self, interaction: discord.Interaction) -> None:
+        """List all custom emojis that the bot owns."""
+        if not self.cached_emojis:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} No bot emojis found.",
+                ephemeral=True
+            )
+            return
+
+        view = EmojiPaginationView(self.cached_emojis)
+        await interaction.response.send_message(
+            embed=view.build_embed(),
+            view=view,
+            ephemeral=True
+        )
 
 
 
