@@ -59,7 +59,7 @@ class WebhookSendModal(discord.ui.Modal):
         )
         await self.webhook.send(
             content=self.message.value,
-            files=files or None,
+            files=files,
             allowed_mentions=allowed_mentions
         )
         await interaction.followup.send(
