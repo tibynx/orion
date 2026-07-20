@@ -177,7 +177,7 @@ class WebhookButtons(discord.ui.View):
     async def show_url(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Display the webhook's URL securely."""
         await interaction.response.send_message(
-            f"{self.webhook.name}: `{self.webhook.url}`", ephemeral=True
+            f"**{self.webhook.name}** Webhook URL:\n```{self.webhook.url}```", ephemeral=True
         )
 
     # Delete webhook button
