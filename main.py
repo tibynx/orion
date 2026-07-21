@@ -152,6 +152,7 @@ class DiscordBot(commands.Bot):
         else:
             send_msg = interaction.response.send_message
 
+        try:
         # Bot doesn't have permission to execute the command
         if isinstance(error, app_commands.BotMissingPermissions):
             await send_msg(
@@ -238,6 +239,13 @@ class DiscordBot(commands.Bot):
             await send_msg(
                 f"{ERROR_EMOJI} An unexpected error occurred while executing the command.",
                 ephemeral=True
+                )
+        except discord.NotFound:
+            # Interaction token expired (e.g., timed-out component interaction)
+            self.logger.warning(
+                "Interaction expired before error response could be sent for '%s' "
+                "by user %s (ID: %s)",
+                command_name, interaction.user.name, interaction.user.id
             )
 
 
