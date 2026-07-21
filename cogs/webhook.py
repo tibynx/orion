@@ -492,7 +492,7 @@ class Webhook(commands.Cog):
                     ephemeral=True
                 )
             await interaction.response.send_message(
-                f"{webhook.name}: `{webhook.url}`", ephemeral=True
+                f"**{webhook.name}** Webhook URL:\n```{webhook.url}```", ephemeral=True
             )
         except discord.Forbidden:
             return await interaction.response.send_message(
