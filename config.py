@@ -13,3 +13,4 @@ NEXT_EMOJI = os.getenv('NEXT_EMOJI', '▶️')
 EXCLUDED_EMOJIS = [
     e.strip() for e in os.getenv('EXCLUDED_EMOJIS', '').split(',') if e.strip()
 ]
+MAX_REACTION_EMOJIS = min(int(os.getenv('MAX_REACTION_EMOJIS', '25')), 25)
