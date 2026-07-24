@@ -292,7 +292,7 @@ class EmojiReactionSelect(discord.ui.Select):
             for emoji in emojis
         ]
         super().__init__(
-            placeholder="Select an emoji...",
+            placeholder="Select an emoji",
             min_values=1,
             max_values=1,
             options=options
@@ -385,12 +385,21 @@ class EmojiReactionSelect(discord.ui.Select):
 
 
 # View container for emoji reaction selection
-class EmojiReactionView(discord.ui.View):
-    """View containing the emoji reaction select menu."""
+class EmojiReactionView(discord.ui.LayoutView):
+    """View containing the emoji reaction select menu inside a container."""
     def __init__(self, target_message: discord.Message, emojis: list[discord.Emoji]):
         """Initialize the view with target message and available emojis."""
         super().__init__(timeout=180)
-        self.add_item(EmojiReactionSelect(target_message, emojis))
+        container = discord.ui.Container(
+            discord.ui.TextDisplay(
+                "## Add or remove reaction\n"
+                "Select an emoji that the bot will react or unreact with to the message."
+            ),
+            discord.ui.ActionRow(
+                EmojiReactionSelect(target_message, emojis)
+            )
+        )
+        self.add_item(container)
 
 
 
@@ -551,7 +560,6 @@ class Message(commands.Cog):
         emojis_to_display = self.cached_emojis[:MAX_REACTION_EMOJIS]
         view = EmojiReactionView(message, emojis_to_display)
         await interaction.response.send_message(
-            content="Select an emoji that the bot will react or unreact with to the message.",
             view=view,
             ephemeral=True
         )
