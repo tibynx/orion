@@ -298,6 +298,7 @@ class EmojiReactionSelect(discord.ui.Select):
             options=options
         )
         self.target_message = target_message
+        self.emojis = emojis
         self.emoji_map = {str(e.id): e for e in emojis}
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -313,6 +314,13 @@ class EmojiReactionSelect(discord.ui.Select):
 
         await interaction.response.defer(ephemeral=True)
 
+        # Helper to reset original view so selection is cleared
+        async def reset_select_menu(msg: discord.Message):
+            try:
+                await interaction.edit_original_response(view=EmojiReactionView(msg, self.emojis))
+            except Exception:
+                pass
+
         # Redundancy check: ensure channel and message still exist
         try:
             channel = interaction.channel
@@ -324,18 +332,21 @@ class EmojiReactionSelect(discord.ui.Select):
                 f"{ERROR_EMOJI} The target message no longer exists.",
                 ephemeral=True
             )
+            await reset_select_menu(self.target_message)
             return
         except discord.Forbidden:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} I do not have permission to view this channel or message.",
                 ephemeral=True
             )
+            await reset_select_menu(self.target_message)
             return
         except discord.HTTPException as error:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to fetch message: {error}",
                 ephemeral=True
             )
+            await reset_select_menu(self.target_message)
             return
 
         # Check if the bot has already reacted with the selected emoji
@@ -382,6 +393,8 @@ class EmojiReactionSelect(discord.ui.Select):
                 f"{ERROR_EMOJI} Failed to update reaction: {error}",
                 ephemeral=True
             )
+        finally:
+            await reset_select_menu(fresh_message)
 
 
 # View container for emoji reaction selection
