@@ -412,21 +412,23 @@ class EmojiReactionView(discord.ui.LayoutView):
         self.interaction = interaction
         self.target_message = target_message
         self.emojis = emojis
+        self.select_menu = EmojiReactionSelect(target_message, emojis)
         container = discord.ui.Container(
             discord.ui.TextDisplay(
                 "## Add or remove reaction\n"
                 "Select an emoji that the bot will react or unreact with to the message."
             ),
             discord.ui.ActionRow(
-                EmojiReactionSelect(target_message, emojis)
+                self.select_menu
             )
         )
         self.add_item(container)
 
     async def on_timeout(self) -> None:
-        """Handle view timeout by deleting the response to avoid stale interactions."""
+        """Handle view timeout by disabling the selection menu."""
+        self.select_menu.disabled = True
         try:
-            await self.interaction.delete_original_response()
+            await self.interaction.edit_original_response(view=self)
         except discord.HTTPException:
             pass
 
