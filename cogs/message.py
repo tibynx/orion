@@ -314,10 +314,10 @@ class EmojiReactionSelect(discord.ui.Select):
 
         await interaction.response.defer(ephemeral=True)
 
-        # Helper to reset original view so selection is cleared
+        # Helper to reset original view so selection is cleared and timeout is refreshed
         async def reset_select_menu(msg: discord.Message):
             try:
-                await interaction.edit_original_response(view=EmojiReactionView(msg, self.emojis))
+                await interaction.edit_original_response(view=EmojiReactionView(interaction, msg, self.emojis))
             except Exception:
                 pass
 
@@ -400,9 +400,18 @@ class EmojiReactionSelect(discord.ui.Select):
 # View container for emoji reaction selection
 class EmojiReactionView(discord.ui.LayoutView):
     """View containing the emoji reaction select menu inside a container."""
-    def __init__(self, target_message: discord.Message, emojis: list[discord.Emoji]):
+    def __init__(
+        self,
+        interaction: discord.Interaction,
+        target_message: discord.Message,
+        emojis: list[discord.Emoji],
+        timeout: float = 180.0
+    ):
         """Initialize the view with target message and available emojis."""
-        super().__init__(timeout=180)
+        super().__init__(timeout=timeout)
+        self.interaction = interaction
+        self.target_message = target_message
+        self.emojis = emojis
         container = discord.ui.Container(
             discord.ui.TextDisplay(
                 "## Add or remove reaction\n"
@@ -413,6 +422,13 @@ class EmojiReactionView(discord.ui.LayoutView):
             )
         )
         self.add_item(container)
+
+    async def on_timeout(self) -> None:
+        """Handle view timeout by deleting the response to avoid stale interactions."""
+        try:
+            await self.interaction.delete_original_response()
+        except discord.HTTPException:
+            pass
 
 
 
@@ -571,7 +587,7 @@ class Message(commands.Cog):
             return
 
         emojis_to_display = self.cached_emojis[:MAX_REACTION_EMOJIS]
-        view = EmojiReactionView(message, emojis_to_display)
+        view = EmojiReactionView(interaction, message, emojis_to_display)
         await interaction.response.send_message(
             view=view,
             ephemeral=True
