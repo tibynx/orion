@@ -33,6 +33,7 @@ MANIFEST
 
 # Project files
 logs/
+temp_roles_db.json
 .gitignore
 README.md
 LICENSE

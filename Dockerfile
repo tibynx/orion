@@ -48,6 +48,7 @@ COPY . .
 
 # set volume for logs
 VOLUME ["/app/logs"]
+VOLUME ["/app/temp_roles_db.json"]
 
 # run the app
 CMD ["python", "main.py"]
