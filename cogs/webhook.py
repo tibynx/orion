@@ -59,7 +59,7 @@ class WebhookSendModal(discord.ui.Modal):
         )
         await self.webhook.send(
             content=self.message.value,
-            files=files or None,
+            files=files,
             allowed_mentions=allowed_mentions
         )
         await interaction.followup.send(
@@ -177,7 +177,7 @@ class WebhookButtons(discord.ui.View):
     async def show_url(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Display the webhook's URL securely."""
         await interaction.response.send_message(
-            f"{self.webhook.name}: `{self.webhook.url}`", ephemeral=True
+            f"**{discord.utils.escape_markdown(self.webhook.name)}** Webhook URL:\n```{self.webhook.url}```", ephemeral=True
         )
 
     # Delete webhook button
@@ -492,7 +492,7 @@ class Webhook(commands.Cog):
                     ephemeral=True
                 )
             await interaction.response.send_message(
-                f"{webhook.name}: `{webhook.url}`", ephemeral=True
+                f"**{discord.utils.escape_markdown(webhook.name)}** Webhook URL:\n```{webhook.url}```", ephemeral=True
             )
         except discord.Forbidden:
             return await interaction.response.send_message(

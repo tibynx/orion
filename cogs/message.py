@@ -63,7 +63,7 @@ class MessageModal(discord.ui.Modal):
         )
         await self.channel.send(
             self.message.value,
-            files=files or None,
+            files=files,
             allowed_mentions=allowed_mentions,
         )
         await interaction.followup.send(
@@ -115,7 +115,7 @@ class DmModal(discord.ui.Modal):
         await interaction.response.defer(ephemeral=True)
         uploaded_files = self.add_files.component.values or []
         files = [await attachment.to_file() for attachment in uploaded_files]
-        await self.user.send(self.message.value, files=files or None)
+        await self.user.send(self.message.value, files=files)
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Direct message sent successfully to {self.user.mention}.",
             ephemeral=True
@@ -174,7 +174,7 @@ class ReplyModal(discord.ui.Modal):
         should_mention = self.mention_author_toggle.component.value
         await self.message.reply(
             self.reply_message.value,
-            files=files or None,
+            files=files,
             mention_author=should_mention
         )
         await interaction.followup.send(

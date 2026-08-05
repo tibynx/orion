@@ -50,7 +50,7 @@ class CreateThreadModal(discord.ui.Modal, title="Create New Thread"):
         # Send the first message in the thread
         await thread.send(
             content=self.first_message.value,
-            files=files or None,
+            files=files,
         )
         await interaction.followup.send(
             f"{SUCCESS_EMOJI} Thread created successfully.",
