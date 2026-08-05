@@ -153,92 +153,92 @@ class DiscordBot(commands.Bot):
             send_msg = interaction.response.send_message
 
         try:
-        # Bot doesn't have permission to execute the command
-        if isinstance(error, app_commands.BotMissingPermissions):
-            await send_msg(
-                f"{ERROR_EMOJI} I don't have permission to execute this command.",
-                ephemeral=True
-            )
-
-        # User doesn't have permission to execute the command
-        elif isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
-            await send_msg(
-                f"{ERROR_EMOJI} You don't have permission to execute this command.",
-                ephemeral=True
-            )
-
-        # Command doesn't exist
-        # Happens when a command is updated, but the client hasn't refreshed
-        elif isinstance(error, app_commands.CommandNotFound):
-            await send_msg(
-                f"{ERROR_EMOJI} Command not found. Please refresh your client.",
-                ephemeral=True
-            )
-
-        # Command raised an unexpected error
-        elif isinstance(error, app_commands.CommandInvokeError):
-            original = getattr(error, "original", error)
-
-            # Bot doesn't have permission (e.g., trying to send a message in a locked channel)
-            if isinstance(original, discord.Forbidden):
+            # Bot doesn't have permission to execute the command
+            if isinstance(error, app_commands.BotMissingPermissions):
                 await send_msg(
                     f"{ERROR_EMOJI} I don't have permission to execute this command.",
                     ephemeral=True
                 )
 
-            # Handle voice-related errors
-            elif isinstance(original, discord.ClientException):
+            # User doesn't have permission to execute the command
+            elif isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
                 await send_msg(
-                    f"{ERROR_EMOJI} Voice connection failed. I might be busy.",
-                    ephemeral=True
-                )
-            elif isinstance(original, discord.opus.OpusNotLoaded):
-                await send_msg(
-                    f"{ERROR_EMOJI} Voice functionality is not available. "
-                    "Missing required audio libraries.",
+                    f"{ERROR_EMOJI} You don't have permission to execute this command.",
                     ephemeral=True
                 )
 
-            # Network issues or rate limiting
-            elif isinstance(original, discord.HTTPException):
-                self.logger.warning(
-                    "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
-                    "guild '%s' (ID: %s): %s",
-                    command_name, interaction.user.name, interaction.user.id,
-                    interaction.guild.name, interaction.guild.id, original
-                )
+            # Command doesn't exist
+            # Happens when a command is updated, but the client hasn't refreshed
+            elif isinstance(error, app_commands.CommandNotFound):
                 await send_msg(
-                    f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
-                    "I might have been rate limited. Please try again later.",
+                    f"{ERROR_EMOJI} Command not found. Please refresh your client.",
                     ephemeral=True
                 )
-            # Handle all other CommandInvokeError cases
+
+            # Command raised an unexpected error
+            elif isinstance(error, app_commands.CommandInvokeError):
+                original = getattr(error, "original", error)
+
+                # Bot doesn't have permission (e.g., trying to send a message in a locked channel)
+                if isinstance(original, discord.Forbidden):
+                    await send_msg(
+                        f"{ERROR_EMOJI} I don't have permission to execute this command.",
+                        ephemeral=True
+                    )
+
+                # Handle voice-related errors
+                elif isinstance(original, discord.ClientException):
+                    await send_msg(
+                        f"{ERROR_EMOJI} Voice connection failed. I might be busy.",
+                        ephemeral=True
+                    )
+                elif isinstance(original, discord.opus.OpusNotLoaded):
+                    await send_msg(
+                        f"{ERROR_EMOJI} Voice functionality is not available. "
+                        "Missing required audio libraries.",
+                        ephemeral=True
+                    )
+
+                # Network issues or rate limiting
+                elif isinstance(original, discord.HTTPException):
+                    self.logger.warning(
+                        "HTTP exception occurred in interaction '%s' for user %s (ID: %s) in "
+                        "guild '%s' (ID: %s): %s",
+                        command_name, interaction.user.name, interaction.user.id,
+                        interaction.guild.name, interaction.guild.id, original
+                    )
+                    await send_msg(
+                        f"{ERROR_EMOJI} I cannot complete this command because of network issues. "
+                        "I might have been rate limited. Please try again later.",
+                        ephemeral=True
+                    )
+                # Handle all other CommandInvokeError cases
+                else:
+                    self.logger.error(
+                        "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
+                        "guild '%s' (ID: %s): %r",
+                        command_name, interaction.user.name, interaction.user.id,
+                        interaction.guild.name, interaction.guild.id, original,
+                        exc_info=(type(original), original, original.__traceback__),
+                    )
+                    await send_msg(
+                        f"{ERROR_EMOJI} An error occurred while executing the command.",
+                        ephemeral=True
+                    )
+                return
+
+            # Other errors
             else:
                 self.logger.error(
-                    "CommandInvokeError occurred in interaction '%s' by user %s (ID: %s) in "
+                    "Unhandled app command error in interaction '%s' by user %s (ID: %s) in "
                     "guild '%s' (ID: %s): %r",
                     command_name, interaction.user.name, interaction.user.id,
-                    interaction.guild.name, interaction.guild.id, original,
-                    exc_info=(type(original), original, original.__traceback__),
+                    interaction.guild.name, interaction.guild.id, error,
+                    exc_info=(type(error), error, error.__traceback__),
                 )
                 await send_msg(
-                    f"{ERROR_EMOJI} An error occurred while executing the command.",
+                    f"{ERROR_EMOJI} An unexpected error occurred while executing the command.",
                     ephemeral=True
-                )
-            return
-
-        # Other errors
-        else:
-            self.logger.error(
-                "Unhandled app command error in interaction '%s' by user %s (ID: %s) in "
-                "guild '%s' (ID: %s): %r",
-                command_name, interaction.user.name, interaction.user.id,
-                interaction.guild.name, interaction.guild.id, error,
-                exc_info=(type(error), error, error.__traceback__),
-            )
-            await send_msg(
-                f"{ERROR_EMOJI} An unexpected error occurred while executing the command.",
-                ephemeral=True
                 )
         except discord.NotFound:
             # Interaction token expired (e.g., timed-out component interaction)
