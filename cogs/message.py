@@ -204,6 +204,7 @@ class EmojiPaginationView(discord.ui.View):
         """Initialize the pagination view with emojis."""
         super().__init__(timeout=180)
         self.emojis = emojis
+        self.message = None
         self.current_page = 0
         self.per_page = 10
         self.total_pages = max(1, (len(emojis) - 1) // self.per_page + 1)
@@ -247,6 +248,8 @@ class EmojiPaginationView(discord.ui.View):
             self.current_page -= 1
             self.update_buttons()
             await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        else:
+            await interaction.response.defer()
 
     @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
     async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
@@ -255,6 +258,20 @@ class EmojiPaginationView(discord.ui.View):
             self.current_page += 1
             self.update_buttons()
             await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        else:
+            await interaction.response.defer()
+
+    async def on_timeout(self) -> None:
+        """Disable buttons when the view times out."""
+        for item in self.children:
+            if hasattr(item, 'disabled'):
+                item.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        self.stop()
 
 
 # Message commands
@@ -412,6 +429,7 @@ class Message(commands.Cog):
             view=view,
             ephemeral=True
         )
+        view.message = await interaction.original_response()
 
 
 
