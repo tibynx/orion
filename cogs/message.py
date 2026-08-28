@@ -315,50 +315,55 @@ class EmojiReactionSelect(discord.ui.Select):
         await interaction.response.defer(ephemeral=True)
 
         # Helper to reset original view so selection is cleared and timeout is refreshed
-        async def reset_select_menu(msg: discord.Message):
+        async def reset_select_menu(msg: discord.Message, emojis: list[discord.Emoji]):
             try:
-                await interaction.edit_original_response(view=EmojiReactionView(interaction, msg, self.emojis))
+                await interaction.edit_original_response(view=EmojiReactionView(interaction, msg, emojis))
             except Exception:
                 pass
 
         # Redundancy check: ensure channel and message still exist
         try:
             channel = interaction.channel
-            if channel is None:
-                channel = await interaction.client.fetch_channel(self.target_message.channel.id)
+            # guild_only() ensures channel is not None for guild interactions
+            assert channel is not None
             fresh_message = await channel.fetch_message(self.target_message.id)
         except discord.NotFound:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} The target message no longer exists.",
                 ephemeral=True
             )
-            await reset_select_menu(self.target_message)
+            await reset_select_menu(self.target_message, self.emojis)
             return
         except discord.Forbidden:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} I do not have permission to view this channel or message.",
                 ephemeral=True
             )
-            await reset_select_menu(self.target_message)
+            await reset_select_menu(self.target_message, self.emojis)
             return
         except discord.HTTPException as error:
             await interaction.followup.send(
                 f"{ERROR_EMOJI} Failed to fetch message: {error}",
                 ephemeral=True
             )
-            await reset_select_menu(self.target_message)
+            await reset_select_menu(self.target_message, self.emojis)
             return
 
         # Check if the bot has already reacted with the selected emoji
+        # selected_emoji is always a custom discord.Emoji from bot's cache
         bot_user = interaction.client.user
+        if bot_user is None:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Bot user not ready.",
+                ephemeral=True
+            )
+            return
         bot_reacted = False
         for reaction in fresh_message.reactions:
             is_match = False
             if isinstance(reaction.emoji, (discord.Emoji, discord.PartialEmoji)):
                 if reaction.emoji.id == selected_emoji.id:
                     is_match = True
-            elif str(reaction.emoji) == str(selected_emoji):
-                is_match = True
 
             if is_match:
                 if reaction.me:
@@ -394,7 +399,7 @@ class EmojiReactionSelect(discord.ui.Select):
                 ephemeral=True
             )
         finally:
-            await reset_select_menu(fresh_message)
+            await reset_select_menu(fresh_message, self.emojis)
 
 
 # View container for emoji reaction selection
