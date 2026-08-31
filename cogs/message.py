@@ -281,6 +281,8 @@ class EditMessageModal(discord.ui.Modal):
             msg = f"{ERROR_EMOJI} This message is no longer available."
         elif isinstance(error, discord.Forbidden):
             msg = f"{ERROR_EMOJI} I do not have permission to edit this message."
+        elif isinstance(error, discord.HTTPException):
+            msg = f"{ERROR_EMOJI} Failed to edit the message. It may be too large or have too many attachments."
         else:
             msg = f"{ERROR_EMOJI} An unexpected error occurred."
             raise error
