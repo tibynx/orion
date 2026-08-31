@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import filetype
-from config import SUCCESS_EMOJI, ERROR_EMOJI
+from config import SUCCESS_EMOJI, ERROR_EMOJI, PREVIOUS_EMOJI, NEXT_EMOJI
 
 
 # Modal for sending messages via webhook ID
@@ -59,7 +59,7 @@ class WebhookSendModal(discord.ui.Modal):
         )
         await self.webhook.send(
             content=self.message.value,
-            files=files or None,
+            files=files,
             allowed_mentions=allowed_mentions
         )
         await interaction.followup.send(
@@ -73,6 +73,15 @@ class WebhookSendModal(discord.ui.Modal):
             msg = f"{ERROR_EMOJI} The specified webhook cannot be found."
         elif isinstance(error, discord.Forbidden):
             msg = f"{ERROR_EMOJI} I don't have permission to send messages with this webhook."
+        elif isinstance(error, ValueError):
+            msg = f"{ERROR_EMOJI} {error}"
+        else:
+            self.bot.logger.error(
+                "Unhandled error in WebhookSendModal.on_submit: %r",
+                error,
+                exc_info=(type(error), error, error.__traceback__),
+            )
+            msg = f"{ERROR_EMOJI} An unexpected error occurred."
 
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
@@ -85,8 +94,9 @@ class WebhookDeleteDialog(discord.ui.LayoutView):
     """View for confirming webhook deletion."""
     def __init__(self, webhook: discord.Webhook):
         """Initialize the dialog with the target webhook."""
-        super().__init__()
+        super().__init__(timeout=30)
         self.webhook = webhook
+        self.message = None
 
         container = discord.ui.Container(
             discord.ui.TextDisplay(
@@ -105,6 +115,8 @@ class WebhookDeleteDialog(discord.ui.LayoutView):
         )
         cancel_button.callback = self.cancel_button_callback
         delete_button.callback = self.delete_button_callback
+        self.cancel_button = cancel_button
+        self.delete_button = delete_button
         buttons = discord.ui.ActionRow(cancel_button, delete_button) # Add buttons to the row
         container.add_item(buttons)
         self.add_item(container)
@@ -139,14 +151,26 @@ class WebhookDeleteDialog(discord.ui.LayoutView):
                 ephemeral=True
             )
 
+    async def on_timeout(self) -> None:
+        """Disable buttons when the view times out."""
+        self.cancel_button.disabled = True
+        self.delete_button.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        self.stop()
+
 
 # Webhook buttons
 class WebhookButtons(discord.ui.View):
     """View providing management buttons for a webhook."""
     def __init__(self, webhook: discord.Webhook):
         """Initialize the buttons with the webhook instance."""
-        super().__init__()
+        super().__init__(timeout=180)
         self.webhook = webhook
+        self.message = None
 
     # Send message button
     # Sends the webhook message modal
@@ -168,7 +192,7 @@ class WebhookButtons(discord.ui.View):
     async def show_url(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Display the webhook's URL securely."""
         await interaction.response.send_message(
-            f"{self.webhook.name}: `{self.webhook.url}`", ephemeral=True
+            f"**{discord.utils.escape_markdown(self.webhook.name)}** Webhook URL:\n```{self.webhook.url}```", ephemeral=True
         )
 
     # Delete webhook button
@@ -176,9 +200,21 @@ class WebhookButtons(discord.ui.View):
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Display the deletion confirmation dialog."""
-        await interaction.response.send_message(
-            view=WebhookDeleteDialog(self.webhook), ephemeral=True
-        )
+        dialog = WebhookDeleteDialog(self.webhook)
+        await interaction.response.send_message(view=dialog, ephemeral=True)
+        dialog.message = await interaction.original_response()
+
+    async def on_timeout(self) -> None:
+        """Disable buttons when the view times out."""
+        for item in self.children:
+            if hasattr(item, 'disabled'):
+                item.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        self.stop()
 
 
 # Separate delete button for channel follower and application webhooks
@@ -186,17 +222,109 @@ class WebhookDeleteButton(discord.ui.View):
     """View providing only a delete button for certain webhook types."""
     def __init__(self, webhook: discord.Webhook):
         """Initialize the button with the webhook instance."""
-        super().__init__()
+        super().__init__(timeout=180)
         self.webhook = webhook
+        self.message = None
 
     # Delete webhook button
     # Sends the webhook deletion confirmation modal
     @discord.ui.button(label="Delete Webhook", style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Display the deletion confirmation dialog."""
-        await interaction.response.send_message(
-            view=WebhookDeleteDialog(self.webhook), ephemeral=True
+        dialog = WebhookDeleteDialog(self.webhook)
+        await interaction.response.send_message(view=dialog, ephemeral=True)
+        dialog.message = await interaction.original_response()
+
+    async def on_timeout(self) -> None:
+        """Disable buttons when the view times out."""
+        for item in self.children:
+            if hasattr(item, 'disabled'):
+                item.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        self.stop()
+
+
+# Pagination view for webhooks
+class WebhookPaginationView(discord.ui.View):
+    """View for paginating webhook list embeds."""
+    def __init__(self, webhooks: list[discord.Webhook], guild_name: str):
+        """Initialize the pagination view with webhooks and guild name."""
+        super().__init__(timeout=180)
+        self.webhooks = webhooks
+        self.guild_name = guild_name
+        self.message = None
+        self.current_page = 0
+        self.per_page = 5
+        self.total_pages = (len(webhooks) - 1) // self.per_page + 1
+        # Set pagination emojis from config
+        self.prev_page.emoji = PREVIOUS_EMOJI
+        self.next_page.emoji = NEXT_EMOJI
+        self.update_buttons()
+
+    def update_buttons(self) -> None:
+        """Enable or disable pagination buttons based on current page."""
+        self.prev_page.disabled = self.current_page == 0
+        self.next_page.disabled = self.current_page == self.total_pages - 1
+
+    def build_embed(self) -> discord.Embed:
+        """Build the embed for the current page."""
+        start = self.current_page * self.per_page
+        end = start + self.per_page
+        page_webhooks = self.webhooks[start:end]
+
+        embed = discord.Embed(
+            title=f"Webhooks in {self.guild_name}",
+            color=None
         )
+        for webhook in page_webhooks:
+            embed.add_field(
+                name=webhook.name,
+                value=(
+                    f"Channel: {webhook.channel.mention}\n"
+                    f"Created by: {webhook.user.mention}\nID: `{webhook.id}`"
+                ),
+                inline=False
+            )
+        embed.set_footer(
+            text=f"Page {self.current_page + 1}/{self.total_pages}  •  Total: {len(self.webhooks)}"
+        )
+        return embed
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary)
+    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the previous page of webhooks."""
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        else:
+            await interaction.response.defer()
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        """Go to the next page of webhooks."""
+        if self.current_page < self.total_pages - 1:
+            self.current_page += 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        else:
+            await interaction.response.defer()
+
+    async def on_timeout(self) -> None:
+        """Disable buttons when the view times out."""
+        for item in self.children:
+            if hasattr(item, 'disabled'):
+                item.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
+        self.stop()
 
 
 
@@ -216,34 +344,13 @@ class Webhook(commands.Cog):
             discord.WebhookType.channel_follower, discord.WebhookType.application
         )
 
+    # Helper to check if a webhook has a token
     @staticmethod
-    def _build_webhook_embeds(
-            webhooks: list[discord.Webhook], guild_name: str
-    ) -> list[discord.Embed]:
-        """Split webhooks into multiple embeds to respect the 25-field limit."""
-        # Split webhooks into multiple embeds to respect the 25-field limit per embed.
-        chunk_size = 25
-        embeds: list[discord.Embed] = []
-        for index in range(0, len(webhooks), chunk_size):
-            page = index // chunk_size + 1
-            embed = discord.Embed(
-                title=f"Webhooks in {guild_name}",
-                color=None
-            )
-            for webhook in webhooks[index:index + chunk_size]:
-                embed.add_field(
-                    name=webhook.name,
-                    value=(
-                        f"Channel: {webhook.channel.mention}\n"
-                        f"Created by: {webhook.user.mention}\nID: `{webhook.id}`"
-                    ),
-                    inline=False
-                )
-            embed.set_footer(
-                text=f"Page {page}  •  Total: {len(webhooks)}"
-            )
-            embeds.append(embed)
-        return embeds
+    def _has_token(webhook: discord.Webhook) -> bool:
+        """Check if a webhook has a token associated with it."""
+        return webhook.token is not None
+
+
 
 
     # Group for editing webhooks
@@ -288,14 +395,20 @@ class Webhook(commands.Cog):
                     text="🛈  This webhook is managed by "
                          f"{webhook.user.name}#{webhook.user.discriminator}."
                 )
-            # Check if it's an application or channel follower webhook (we can only delete those)
-            elif self._is_readonly_webhook(webhook):
-                return await interaction.response.send_message(
-                    embed=embed, view=WebhookDeleteButton(webhook), ephemeral=True
+            # Check if it's an application or channel follower webhook, or lacks a token (we can only delete those)
+            if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
+                view = WebhookDeleteButton(webhook)
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
                 )
-            return await interaction.response.send_message(
-                embed=embed, view=WebhookButtons(webhook), ephemeral=True
+                view.message = await interaction.original_response()
+                return
+            view = WebhookButtons(webhook)
+            await interaction.response.send_message(
+                embed=embed, view=view, ephemeral=True
             )
+            view.message = await interaction.original_response()
+            return
         except discord.Forbidden:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to get webhook details.",
@@ -327,11 +440,11 @@ class Webhook(commands.Cog):
                     f"{ERROR_EMOJI} No webhooks found in this server.",
                     ephemeral=True
                 )
-            embeds = self._build_webhook_embeds(webhooks, interaction.guild.name)
-            # Send pages sequentially to stay ephemeral per message
-            for index, embed in enumerate(embeds):
-                await interaction.followup.send(embed=embed, ephemeral=True)
-            return None
+            view = WebhookPaginationView(webhooks, interaction.guild.name)
+            view.message = await interaction.followup.send(
+                embed=view.build_embed(), view=view, ephemeral=True
+            )
+            return
         except discord.Forbidden:
             return await interaction.followup.send(
                 f"{ERROR_EMOJI} I don't have permission to list webhooks.",
@@ -377,10 +490,12 @@ class Webhook(commands.Cog):
                 text="🛈  Use the /webhookedit commands to "
                      "edit this webhook's details."
             )
+            view = WebhookButtons(webhook)
             await interaction.response.send_message(
                 f"{SUCCESS_EMOJI} Created **{webhook.name}** webhook successfully.",
-                embed=embed, view=WebhookButtons(webhook), ephemeral=True
+                embed=embed, view=view, ephemeral=True
             )
+            view.message = await interaction.original_response()
         except discord.Forbidden:
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} I don't have permission to create webhooks in this channel.",
@@ -420,7 +535,9 @@ class Webhook(commands.Cog):
                 f"{ERROR_EMOJI} The specified webhook cannot be found.",
                 ephemeral=True
             )
-        await interaction.response.send_message(view=WebhookDeleteDialog(webhook), ephemeral=True)
+        dialog = WebhookDeleteDialog(webhook)
+        await interaction.response.send_message(view=dialog, ephemeral=True)
+        dialog.message = await interaction.original_response()
         return None
 
     # Show webhook url
@@ -437,13 +554,13 @@ class Webhook(commands.Cog):
         """Display the URL of a webhook."""
         try:
             webhook = await self.bot.fetch_webhook(webhook_id)
-            if self._is_readonly_webhook(webhook):
+            if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
                 return await interaction.response.send_message(
                     f"{ERROR_EMOJI} You cannot get the URL for this webhook.",
                     ephemeral=True
                 )
             await interaction.response.send_message(
-                f"{webhook.name}: `{webhook.url}`", ephemeral=True
+                f"**{discord.utils.escape_markdown(webhook.name)}** Webhook URL:\n```{webhook.url}```", ephemeral=True
             )
         except discord.Forbidden:
             return await interaction.response.send_message(
@@ -487,8 +604,8 @@ class Webhook(commands.Cog):
                 f"{ERROR_EMOJI} You cannot send messages to forum webhooks.",
                 ephemeral=True
             )
-        # Check if it's a channel follower or application webhook
-        if self._is_readonly_webhook(webhook):
+        # Check if it's a channel follower, application webhook, or lacks a token
+        if self._is_readonly_webhook(webhook) or not self._has_token(webhook):
             return await interaction.response.send_message(
                 f"{ERROR_EMOJI} You cannot send messages with this webhook.",
                 ephemeral=True

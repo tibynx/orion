@@ -21,13 +21,15 @@ FROM python:3.14-alpine AS runtime-stage
 # set labels
 ARG BUILD_DATE
 ARG VERSION
-LABEL org.opencontainers.image.authors="tibynx (https://github.com/tibynx)"
+LABEL org.opencontainers.image.authors="tibynx"
+LABEL org.opencontainers.image.vendor="tibynx"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.title="Orion"
 LABEL org.opencontainers.image.description="A Discord bot with server management and utility functions."
-LABEL org.opencontainers.image.source="https://github.com/tibynx/orion"
-LABEL org.opencontainers.image.url="https://github.com/tibynx/orion/packages"
+LABEL org.opencontainers.image.documentation="https://github.com/tibynx/orion-discord-bot/blob/main/README.md"
+LABEL org.opencontainers.image.source="https://github.com/tibynx/orion-discord-bot"
+LABEL org.opencontainers.image.url="https://github.com/tibynx/orion-discord-bot/packages"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.base.name="python:3.14-alpine"
 LABEL org.opencontainers.image.base.documentation="https://hub.docker.com/_/python"
@@ -48,6 +50,7 @@ COPY . .
 
 # set volume for logs
 VOLUME ["/app/logs"]
+VOLUME ["/app/temp_roles_db.json"]
 
 # run the app
 CMD ["python", "main.py"]
