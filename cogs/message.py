@@ -212,12 +212,15 @@ class EditMessageModal(discord.ui.Modal):
         existing_attachments = len(message.attachments)
         max_new_attachments = max(0, 10 - existing_attachments)
 
-        # Update the file upload component's max_values dynamically
-        self.add_files.component.max_values = max_new_attachments
-        self.add_files.description = (
-            f"Existing attachments will be preserved. "
-            f"You can add up to {max_new_attachments} more attachment(s)."
-        )
+        # Update the file upload component's max_values dynamically if additional attachments can be uploaded
+        if max_new_attachments > 0:
+            self.add_files.component.max_values = max_new_attachments
+            self.add_files.description = (
+                f"Existing attachments will be preserved. "
+                f"You can add up to {max_new_attachments} more attachment(s)."
+            )
+        else:
+            self.remove_item(self.add_files)
 
     edit_message = discord.ui.TextInput(
         label="Message",
@@ -250,7 +253,7 @@ class EditMessageModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         """Edit the message upon submission."""
         await interaction.response.defer(ephemeral=True)
-        uploaded_files = self.add_files.component.values or []
+        uploaded_files = self.add_files.component.values or [] if self.add_files in self.children else []
         files = [await attachment.to_file() for attachment in uploaded_files]
         
         # Keep existing attachments and append new files
