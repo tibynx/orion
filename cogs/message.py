@@ -3,7 +3,9 @@ from typing import Union
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from config import SUCCESS_EMOJI, ERROR_EMOJI, PREVIOUS_EMOJI, NEXT_EMOJI, EXCLUDED_EMOJIS
+from config import (
+    SUCCESS_EMOJI, ERROR_EMOJI, PREVIOUS_EMOJI, NEXT_EMOJI, EXCLUDED_EMOJIS, MAX_REACTION_EMOJIS
+)
 
 
 # Helper to check if the user is the bot itself.
@@ -276,6 +278,167 @@ class EmojiPaginationView(discord.ui.View):
         self.stop()
 
 
+# Select menu for choosing an emoji reaction
+class EmojiReactionSelect(discord.ui.Select):
+    """Select menu for choosing a bot emoji to react or unreact with."""
+    def __init__(self, target_message: discord.Message, emojis: list[discord.Emoji]):
+        """Initialize the select menu with emojis and target message."""
+        options = [
+            discord.SelectOption(
+                label=emoji.name,
+                value=str(emoji.id),
+                emoji=emoji
+            )
+            for emoji in emojis
+        ]
+        super().__init__(
+            placeholder="Select an emoji",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+        self.target_message = target_message
+        self.emojis = emojis
+        self.emoji_map = {str(e.id): e for e in emojis}
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        """Handle the selection of an emoji reaction."""
+        selected_id = self.values[0]
+        selected_emoji = self.emoji_map.get(selected_id)
+        if not selected_emoji:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} The selected emoji is no longer available.",
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Helper to reset original view so selection is cleared and timeout is refreshed
+        async def reset_select_menu(msg: discord.Message, emojis: list[discord.Emoji]):
+            try:
+                await interaction.edit_original_response(view=EmojiReactionView(interaction, msg, emojis))
+            except Exception:
+                pass
+
+        # Redundancy check: ensure channel and message still exist
+        try:
+            channel = interaction.channel
+            # guild_only() ensures channel is not None for guild interactions
+            assert channel is not None
+            fresh_message = await channel.fetch_message(self.target_message.id)
+        except discord.NotFound:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} The target message no longer exists.",
+                ephemeral=True
+            )
+            await reset_select_menu(self.target_message, self.emojis)
+            return
+        except discord.Forbidden:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} I do not have permission to view this channel or message.",
+                ephemeral=True
+            )
+            await reset_select_menu(self.target_message, self.emojis)
+            return
+        except discord.HTTPException as error:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Failed to fetch message: {error}",
+                ephemeral=True
+            )
+            await reset_select_menu(self.target_message, self.emojis)
+            return
+
+        # Check if the bot has already reacted with the selected emoji
+        # selected_emoji is always a custom discord.Emoji from bot's cache
+        bot_user = interaction.client.user
+        if bot_user is None:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Bot user not ready.",
+                ephemeral=True
+            )
+            return
+        bot_reacted = False
+        for reaction in fresh_message.reactions:
+            is_match = False
+            if isinstance(reaction.emoji, (discord.Emoji, discord.PartialEmoji)):
+                if reaction.emoji.id == selected_emoji.id:
+                    is_match = True
+
+            if is_match:
+                if reaction.me:
+                    bot_reacted = True
+                break
+
+        try:
+            if bot_reacted:
+                await fresh_message.remove_reaction(selected_emoji, bot_user)
+                await interaction.followup.send(
+                    f"{SUCCESS_EMOJI} Removed {selected_emoji} reaction from the message.",
+                    ephemeral=True
+                )
+            else:
+                await fresh_message.add_reaction(selected_emoji)
+                await interaction.followup.send(
+                    f"{SUCCESS_EMOJI} Added {selected_emoji} reaction to the message.",
+                    ephemeral=True
+                )
+        except discord.Forbidden:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} I do not have permission to add or remove reactions in this channel.",
+                ephemeral=True
+            )
+        except discord.NotFound:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} The message or emoji was not found.",
+                ephemeral=True
+            )
+        except discord.HTTPException as error:
+            await interaction.followup.send(
+                f"{ERROR_EMOJI} Failed to update reaction: {error}",
+                ephemeral=True
+            )
+        finally:
+            await reset_select_menu(fresh_message, self.emojis)
+
+
+# View container for emoji reaction selection
+class EmojiReactionView(discord.ui.LayoutView):
+    """View containing the emoji reaction select menu inside a container."""
+    def __init__(
+        self,
+        interaction: discord.Interaction,
+        target_message: discord.Message,
+        emojis: list[discord.Emoji],
+        timeout: float = 180.0
+    ):
+        """Initialize the view with target message and available emojis."""
+        super().__init__(timeout=timeout)
+        self.interaction = interaction
+        self.target_message = target_message
+        self.emojis = emojis
+        self.select_menu = EmojiReactionSelect(target_message, emojis)
+        container = discord.ui.Container(
+            discord.ui.TextDisplay(
+                "## Add or remove reaction\n"
+                "Select an emoji that the bot will react or unreact with to the message."
+            ),
+            discord.ui.ActionRow(
+                self.select_menu
+            )
+        )
+        self.add_item(container)
+
+    async def on_timeout(self) -> None:
+        """Handle view timeout by disabling the selection menu."""
+        self.select_menu.disabled = True
+        try:
+            await self.interaction.edit_original_response(view=self)
+        except discord.HTTPException:
+            pass
+
+
+
 # Message commands
 class Message(commands.Cog):
     """Cog for sending and replying to messages."""
@@ -298,6 +461,13 @@ class Message(commands.Cog):
             callback=self.dm_command_callback
         )
         self.bot.tree.add_command(self.dm_command)
+
+        # Context menu command for adding or removing reactions
+        self.react_command = app_commands.ContextMenu(
+            name="Add/Remove Reactions",
+            callback=self.react_command_callback
+        )
+        self.bot.tree.add_command(self.react_command)
 
     async def cog_unload(self) -> None:
         """Stop the background tasks on cog unload."""
@@ -406,6 +576,29 @@ class Message(commands.Cog):
             return
         # Send the DM modal
         await interaction.response.send_modal(DmModal(user))
+
+
+    # Callback for the add/remove reactions context menu command
+    @app_commands.guild_only()
+    # Requires manage messages and add reactions default permissions
+    @app_commands.default_permissions(manage_messages=True, add_reactions=True)
+    async def react_command_callback(
+            self, interaction: discord.Interaction, message: discord.Message
+    ):
+        """Display a selection menu to add or remove reactions as the bot."""
+        if not self.cached_emojis:
+            await interaction.response.send_message(
+                f"{ERROR_EMOJI} No bot emojis found.",
+                ephemeral=True
+            )
+            return
+
+        emojis_to_display = self.cached_emojis[:MAX_REACTION_EMOJIS]
+        view = EmojiReactionView(interaction, message, emojis_to_display)
+        await interaction.response.send_message(
+            view=view,
+            ephemeral=True
+        )
 
 
     # List all custom emojis that the bot owns
