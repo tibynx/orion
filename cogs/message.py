@@ -206,6 +206,17 @@ class EditMessageModal(discord.ui.Modal):
         self.message = message
         self.edit_message.default = message.content
 
+        # Calculate remaining attachment slots (Discord limit is 10 per message)
+        existing_attachments = len(message.attachments)
+        max_new_attachments = max(0, 10 - existing_attachments)
+
+        # Update the file upload component's max_values dynamically
+        self.add_files.component.max_values = max_new_attachments
+        self.add_files.description = (
+            f"Existing attachments will be preserved. "
+            f"You can add up to {max_new_attachments} more attachment(s)."
+        )
+
     edit_message = discord.ui.TextInput(
         label="Message",
         style=discord.TextStyle.long,
