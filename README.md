@@ -72,12 +72,12 @@ Now choose one of the following methods to run the bot!
 
 |   Variable    | Description                                                |
 |:-------------:|------------------------------------------------------------|
-|   BOT_TOKEN   | Your bot token. Do not share this with anyone!             |
-| SUCCESS_EMOJI | (Optional) The emoji the bot will use to indicate success. |
-|  ERROR_EMOJI  | (Optional) The emoji the bot will use in indicate issues.  |
-| PREVIOUS_EMOJI| (Optional) The emoji the bot will use for the previous button's icon. |
-|  NEXT_EMOJI   | (Optional) The emoji the bot will use for the next button's icon.  |
-| EXCLUDED_EMOJIS | (Optional) A comma separated list of emojis (names or IDs) to exclude from the bot emojis list. |
+|   `BOT_TOKEN`   | Your bot token. Do not share this with anyone!             |
+| `SUCCESS_EMOJI` | (Optional) The emoji the bot will use to indicate success. |
+|  `ERROR_EMOJI`  | (Optional) The emoji the bot will use in indicate issues.  |
+| `PREVIOUS_EMOJI`| (Optional) The emoji the bot will use for the previous button's icon. |
+|  `NEXT_EMOJI`   | (Optional) The emoji the bot will use for the next button's icon.  |
+| `EXCLUDED_EMOJIS` | (Optional) A comma separated list of emojis (names or IDs) to exclude from the bot emojis list. |
 
 ## Usage
 
